@@ -1,0 +1,32 @@
+{
+  "name": "faucet",
+  "description": "Nhận các token miễn phí mỗi giờ",
+  "options": [
+    {
+      "name": "token",
+      "description": "Chọn token",
+      "type": 3,
+      "required": true,
+      "choices" : [
+        {
+          "name": "ARK",
+          "value": "ark"
+        },
+        {
+          "name": "BIND",
+          "value": "bind"
+        },
+        {
+          "name": "bARK",
+          "value": "bark"
+        }
+      ]
+    },
+    {
+      "name": "address",
+      "description": "Address ví của mạng",
+      "type": 3,
+      "required": true
+    }
+  ]
+}
