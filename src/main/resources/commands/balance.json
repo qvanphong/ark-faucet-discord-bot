@@ -1,0 +1,12 @@
+{
+  "name": "barkbalance",
+  "description": "Kiểm tra số dư bARK theo địa chỉ ví. (Tin nhắn số dư sẽ được gửi riêng)",
+  "options": [
+    {
+      "name": "address",
+      "description": "Address ví của mạng",
+      "type": 3,
+      "required": true
+    }
+  ]
+}

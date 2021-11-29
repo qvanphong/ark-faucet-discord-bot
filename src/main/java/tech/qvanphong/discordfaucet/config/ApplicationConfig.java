@@ -19,6 +19,8 @@ class ApplicationConfig {
 
     String passphraseLocation;
 
+    String aslpApiUrl;
+
     public TokenConfig getTokenConfigFromChainName(String chainName) {
         return this.token.get(chainName);
     }
