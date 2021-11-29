@@ -12,11 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import tech.qvanphong.discordfaucet.config.ApplicationConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
+import tech.qvanphong.discordfaucet.entity.User;
 import tech.qvanphong.discordfaucet.network.bind.BINDTestnet;
+import tech.qvanphong.discordfaucet.service.UserService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SpringBootTest
@@ -135,4 +138,11 @@ class ApplicationTests {
         }
     }
 
+    @Test
+     void getUserListTest(UserService userService) {
+        List<User> users = userService.getUsers();
+        assert  !users.isEmpty();
+
+        users.forEach(user -> System.out.println(user.getId()));
+    }
 }

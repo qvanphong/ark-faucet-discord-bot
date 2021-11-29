@@ -9,4 +9,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 public class DiscordBotConfig {
     private String token;
+
+    private String ownerId;
 }

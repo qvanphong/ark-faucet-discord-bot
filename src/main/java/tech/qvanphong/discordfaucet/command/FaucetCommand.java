@@ -9,8 +9,13 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.ApplicationConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
+import tech.qvanphong.discordfaucet.entity.User;
+import tech.qvanphong.discordfaucet.service.UserService;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -20,12 +25,14 @@ public class FaucetCommand implements SlashCommand {
     private Map<String, Connection> networkConnection;
     private ApplicationConfig applicationConfig;
     private ARKClientUtility arkClientUtility;
+    private UserService userService;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnections, ApplicationConfig applicationConfig) {
+    public FaucetCommand(Map<String, Connection> networkConnections, ApplicationConfig applicationConfig, UserService userService) {
         this.networkConnection = networkConnections;
         this.applicationConfig = applicationConfig;
         this.arkClientUtility = new ARKClientUtility(applicationConfig, networkConnections);
+        this.userService = userService;
     }
 
     @Override
@@ -47,9 +54,26 @@ public class FaucetCommand implements SlashCommand {
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
         }
 
+        // get user from database, if not exist, create it.
+            long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
+        User existUser = userService.getUser(discordUserId) == null ? userService.createUser(discordUserId) : userService.getUser(discordUserId);
 
         // Begin create transaction and broadcast this transaction
         return event.deferReply()
+                .then(Mono.just(existUser))
+
+                // Check if user in black list or can get reward now.
+                .flatMap(user -> {
+                    if (user.isBlacklisted()) {
+                        return Mono.error(new Exception("Bạn đang bị cấm truy cập lệnh"));
+                    }
+                    if (!canUserGetReward(user)) {
+                        return Mono.error(new Exception("Vui lòng quay lại sau: " + getWaitMinuteLeftText(user)));
+                    }
+                    return Mono.empty();
+                })
+
+                // Validate recipient address
                 .then(Mono.just(recipientAddress))
                 .flatMap(recipient -> {
                     boolean isValidAddress = this.arkClientUtility.validateAddress(recipient, selectedToken);
@@ -101,6 +125,9 @@ public class FaucetCommand implements SlashCommand {
                             ((List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("invalid")).isEmpty() &&
                             !((List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("accept")).isEmpty()) {
 
+                        // update last action for user
+                        userService.saveLatestActionTime(discordUserId);
+
                         List<String> acceptedTransactions = (List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("accept");
                         String transactionUrl = tokenConfig.getExplorerUrl() + "transaction/" + acceptedTransactions.get(0);
                         double amount = tokenConfig.isAslp() ? tokenConfig.getAslpReward() : tokenConfig.getRewardAmount() / 100000000D;
@@ -120,5 +147,23 @@ public class FaucetCommand implements SlashCommand {
 
     }
 
+    public boolean canUserGetReward(User user) {
+        if (user == null || user.getLastActionTime() == null) {
+            return true;
+        }
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime lastActionTime = user.getLastActionTime();
+        long elapsedRewardTime = Duration.between(lastActionTime, now).toHours();
+
+        return elapsedRewardTime >= 3;
+    }
+
+    public String getWaitMinuteLeftText(User user) {
+        LocalDateTime targetTime = user.getLastActionTime().plus(3, ChronoUnit.HOURS);
+        LocalDateTime now = LocalDateTime.now();
+
+        Duration between = Duration.between(now, targetTime);
+        return between.toHours() + " giờ " + between.toMinutesPart() + " phút " + between.toSecondsPart() + " giây" ;
+    }
 }
