@@ -10,7 +10,7 @@ import org.arkecosystem.crypto.transactions.types.Transaction;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.User;
 import tech.qvanphong.discordfaucet.network.bind.BINDTestnet;
@@ -80,7 +80,7 @@ class ApplicationTests {
     }
 
     @Test
-    void sendingTransactionTest(@Autowired ApplicationConfig config) {
+    void sendingTransactionTest(@Autowired FaucetConfig config) {
         long nonce = 0L;
         Network.set(new Devnet());
         TokenConfig tokenInfo= config.getTokenConfigFromChainName("bark");

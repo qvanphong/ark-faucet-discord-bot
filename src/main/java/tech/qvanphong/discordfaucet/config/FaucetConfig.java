@@ -9,19 +9,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
-@ConfigurationProperties("app")
+@ConfigurationProperties("faucet")
 @Getter
 @Setter
 public @Data
-class ApplicationConfig {
+class FaucetConfig {
 
-    Map<String, TokenConfig> token = new HashMap<>();
+    Map<String, TokenConfig> tokens = new HashMap<>();
 
     String passphraseLocation;
 
     String aslpApiUrl;
 
+    long rewardCoolDownMinute;
+
     public TokenConfig getTokenConfigFromChainName(String chainName) {
-        return this.token.get(chainName);
+        return this.tokens.get(chainName);
     }
 }

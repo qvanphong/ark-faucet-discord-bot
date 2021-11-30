@@ -5,7 +5,7 @@ import org.arkecosystem.crypto.transactions.builder.TransferBuilder;
 import org.arkecosystem.crypto.transactions.types.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 
 import java.io.IOException;
@@ -14,8 +14,8 @@ import java.util.Map;
 public class TransactionUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-    public Transaction createRewardTransaction(ApplicationConfig config, Connection connection, String tokenName, String recipientAddress) {
-        if (config.getToken().containsKey(tokenName)) {
+    public Transaction createRewardTransaction(FaucetConfig config, Connection connection, String tokenName, String recipientAddress) {
+        if (config.getTokens().containsKey(tokenName)) {
             TokenConfig tokenInfo= config.getTokenConfigFromChainName(tokenName);
             long nonce = 0;
 

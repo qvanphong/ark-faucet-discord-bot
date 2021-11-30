@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
 import tech.qvanphong.discordfaucet.listener.SlashCommandListener;
 
@@ -46,10 +46,10 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    public Map<String, Connection> networkConnection(ApplicationConfig applicationConfig) {
+    public Map<String, Connection> networkConnection(FaucetConfig faucetConfig) {
         Map<String, Connection> networkConnection = new HashMap<>();
 
-        applicationConfig.getToken().forEach((chainName, tokenInfo) -> {
+        faucetConfig.getTokens().forEach((chainName, tokenInfo) -> {
             Map<String, Object> connectionConfig = new HashMap<>();
             connectionConfig.put("host", tokenInfo.getApiUrl());
             Connection connection = new Connection(connectionConfig);

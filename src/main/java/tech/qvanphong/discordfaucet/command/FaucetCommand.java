@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.User;
 import tech.qvanphong.discordfaucet.service.UserService;
@@ -23,15 +23,15 @@ import java.util.Map;
 public class FaucetCommand implements SlashCommand {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private Map<String, Connection> networkConnection;
-    private ApplicationConfig applicationConfig;
+    private FaucetConfig faucetConfig;
     private ARKClientUtility arkClientUtility;
     private UserService userService;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnections, ApplicationConfig applicationConfig, UserService userService) {
+    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserService userService) {
         this.networkConnection = networkConnections;
-        this.applicationConfig = applicationConfig;
-        this.arkClientUtility = new ARKClientUtility(applicationConfig, networkConnections);
+        this.faucetConfig = faucetConfig;
+        this.arkClientUtility = new ARKClientUtility(faucetConfig, networkConnections);
         this.userService = userService;
     }
 
@@ -47,7 +47,7 @@ public class FaucetCommand implements SlashCommand {
         String recipientAddress = event.getOption("address").get().getValue().get().asString();
 
         Connection connection = networkConnection.get(selectedToken);
-        TokenConfig tokenConfig = applicationConfig.getTokenConfigFromChainName(selectedToken);
+        TokenConfig tokenConfig = faucetConfig.getTokenConfigFromChainName(selectedToken);
 
         // Check if this network is already config
         if (connection == null || tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty()) {
@@ -106,7 +106,7 @@ public class FaucetCommand implements SlashCommand {
                 })
 
                 // Create Transaction
-                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(applicationConfig, selectedToken, recipientAddress, nonce)))
+                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(faucetConfig, selectedToken, recipientAddress, nonce)))
 
                 // Broadcast transaction
                 .flatMap(transaction -> {
@@ -154,13 +154,13 @@ public class FaucetCommand implements SlashCommand {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime lastActionTime = user.getLastActionTime();
-        long elapsedRewardTime = Duration.between(lastActionTime, now).toHours();
+        long elapsedRewardTime = Duration.between(lastActionTime, now).toMinutes();
 
-        return elapsedRewardTime >= 3;
+        return elapsedRewardTime >= faucetConfig.getRewardCoolDownMinute();
     }
 
     public String getWaitMinuteLeftText(User user) {
-        LocalDateTime targetTime = user.getLastActionTime().plus(3, ChronoUnit.HOURS);
+        LocalDateTime targetTime = user.getLastActionTime().plus(faucetConfig.getRewardCoolDownMinute(), ChronoUnit.MINUTES);
         LocalDateTime now = LocalDateTime.now();
 
         Duration between = Duration.between(now, targetTime);

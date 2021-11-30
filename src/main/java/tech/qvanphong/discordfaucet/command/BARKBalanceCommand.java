@@ -10,16 +10,16 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 
 import java.io.IOException;
 
 @Component
 public class BARKBalanceCommand implements SlashCommand {
-    private ApplicationConfig applicationConfig;
+    private FaucetConfig faucetConfig;
 
-    public BARKBalanceCommand(ApplicationConfig applicationConfig) {
-        this.applicationConfig = applicationConfig;
+    public BARKBalanceCommand(FaucetConfig faucetConfig) {
+        this.faucetConfig = faucetConfig;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class BARKBalanceCommand implements SlashCommand {
 
         String address = event.getOption("address").get().getValue().get().asString();
         String tokenId = "8259ce077b1e767227e5e0fce590d26d";
-        String apiURL = applicationConfig.getAslpApiUrl();
+        String apiURL = faucetConfig.getAslpApiUrl();
 
 
         return Mono.just(fetchBalance(apiURL, tokenId, address))

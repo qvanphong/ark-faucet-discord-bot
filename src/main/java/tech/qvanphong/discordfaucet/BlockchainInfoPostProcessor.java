@@ -3,7 +3,7 @@ package tech.qvanphong.discordfaucet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import tech.qvanphong.discordfaucet.config.ApplicationConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -15,9 +15,9 @@ public class BlockchainInfoPostProcessor implements BeanPostProcessor {
 
     @Override
     public final Object postProcessAfterInitialization(final Object bean, final String beanName) {
-        if (bean instanceof ApplicationConfig) {
-            ApplicationConfig config = (ApplicationConfig) bean;
-            config.getToken().forEach((chainName, tokenInfo) -> {
+        if (bean instanceof FaucetConfig) {
+            FaucetConfig config = (FaucetConfig) bean;
+            config.getTokens().forEach((chainName, tokenInfo) -> {
                 try {
                     String fileLocation = config.getPassphraseLocation() + chainName + ".ps";
                     BufferedReader br = new BufferedReader(new FileReader(fileLocation));
