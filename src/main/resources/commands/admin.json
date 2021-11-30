@@ -1,0 +1,37 @@
+{
+  "name": "admin",
+  "description": "Command quản lý admin",
+  "options": [
+    {
+      "name": "list",
+      "description": "Hiển thị danh sách admin quản lý bot.",
+      "type": 1
+    },
+    {
+      "name": "add",
+      "description": "Thêm admin",
+      "type": 1,
+      "options": [
+        {
+          "name": "user",
+          "description": "user",
+          "required": true,
+          "type": 6
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Xóa admin",
+      "type": 1,
+      "options": [
+        {
+          "name": "user",
+          "description": "user",
+          "required": true,
+          "type": 6
+        }
+      ]
+    }
+  ]
+}

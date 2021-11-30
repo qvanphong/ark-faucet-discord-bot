@@ -9,6 +9,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User getUserById(Long userId);
 
+    User findById(long userId);
 
     @Override
     <S extends User> S save(S entity);

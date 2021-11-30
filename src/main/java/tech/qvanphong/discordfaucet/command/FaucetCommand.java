@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.User;
+import tech.qvanphong.discordfaucet.service.BlacklistUserService;
 import tech.qvanphong.discordfaucet.service.UserService;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
 
@@ -26,13 +27,15 @@ public class FaucetCommand implements SlashCommand {
     private FaucetConfig faucetConfig;
     private ARKClientUtility arkClientUtility;
     private UserService userService;
+    private BlacklistUserService blacklistUserService;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserService userService) {
+    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserService userService, BlacklistUserService blacklistUserService) {
         this.networkConnection = networkConnections;
         this.faucetConfig = faucetConfig;
         this.arkClientUtility = new ARKClientUtility(faucetConfig, networkConnections);
         this.userService = userService;
+        this.blacklistUserService = blacklistUserService;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class FaucetCommand implements SlashCommand {
         }
 
         // get user from database, if not exist, create it.
-            long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
+        long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
         User existUser = userService.getUser(discordUserId) == null ? userService.createUser(discordUserId) : userService.getUser(discordUserId);
 
         // Begin create transaction and broadcast this transaction
@@ -64,7 +67,7 @@ public class FaucetCommand implements SlashCommand {
 
                 // Check if user in black list or can get reward now.
                 .flatMap(user -> {
-                    if (user.isBlacklisted()) {
+                    if (blacklistUserService.isUserInBlacklist(user.getId())) {
                         return Mono.error(new Exception("Bạn đang bị cấm truy cập lệnh"));
                     }
                     if (!canUserGetReward(user)) {
@@ -164,6 +167,6 @@ public class FaucetCommand implements SlashCommand {
         LocalDateTime now = LocalDateTime.now();
 
         Duration between = Duration.between(now, targetTime);
-        return between.toHours() + " giờ " + between.toMinutesPart() + " phút " + between.toSecondsPart() + " giây" ;
+        return between.toHours() + " giờ " + between.toMinutesPart() + " phút " + between.toSecondsPart() + " giây";
     }
 }

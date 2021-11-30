@@ -21,14 +21,17 @@ public class UserService {
         return userRepository.getUserById(userId);
     }
 
+    public User getOrCreate(long userId) {
+        User userById = userRepository.findById(userId);
+        return userById != null ? userById : this.createUser(userId);
+    }
+
     public List<User> getUsers() {
         return userRepository.findAll();
     }
 
     public User createUser(long userId) {
         User user = new User();
-        user.setAdmin(false);
-        user.setBlacklisted(false);
         user.setId(userId);
         return userRepository.save(user);
     }
@@ -40,8 +43,6 @@ public class UserService {
             user.setLastActionTime(LocalDateTime.now());
         } else {
             user = new User();
-            user.setAdmin(false);
-            user.setBlacklisted(false);
             user.setId(userId);
             user.setLastActionTime(LocalDateTime.now());
         }

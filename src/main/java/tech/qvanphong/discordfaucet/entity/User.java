@@ -2,6 +2,7 @@ package tech.qvanphong.discordfaucet.entity;
 
 import lombok.Data;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -14,9 +15,6 @@ class User {
     @Id
     private Long id;
 
-    private boolean isBlacklisted;
-
-    private boolean isAdmin;
-
+    @Column(columnDefinition = "timestamp default null")
     private LocalDateTime lastActionTime;
 }
