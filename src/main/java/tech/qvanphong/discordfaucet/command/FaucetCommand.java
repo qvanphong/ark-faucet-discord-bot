@@ -9,14 +9,9 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
-import tech.qvanphong.discordfaucet.entity.User;
-import tech.qvanphong.discordfaucet.service.BlacklistUserService;
-import tech.qvanphong.discordfaucet.service.UserService;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
+import tech.qvanphong.discordfaucet.utility.UserUtility;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -26,16 +21,14 @@ public class FaucetCommand implements SlashCommand {
     private Map<String, Connection> networkConnection;
     private FaucetConfig faucetConfig;
     private ARKClientUtility arkClientUtility;
-    private UserService userService;
-    private BlacklistUserService blacklistUserService;
+    private UserUtility userUtility;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserService userService, BlacklistUserService blacklistUserService) {
+    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserUtility userUtility) {
         this.networkConnection = networkConnections;
         this.faucetConfig = faucetConfig;
         this.arkClientUtility = new ARKClientUtility(faucetConfig, networkConnections);
-        this.userService = userService;
-        this.blacklistUserService = blacklistUserService;
+        this.userUtility = userUtility;
     }
 
     @Override
@@ -57,24 +50,19 @@ public class FaucetCommand implements SlashCommand {
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
         }
 
+        if (event.getInteraction().getGuildId().isEmpty()) {
+            return event.reply("Không lấy được guild id");
+        }
+
         // get user from database, if not exist, create it.
         long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
-        User existUser = userService.getUser(discordUserId) == null ? userService.createUser(discordUserId) : userService.getUser(discordUserId);
+        long guildId = event.getInteraction().getGuildId().get().asLong();
 
         // Begin create transaction and broadcast this transaction
         return event.deferReply()
-                .then(Mono.just(existUser))
-
+                .then(Mono.just(userUtility.getClaimRewardErrorMessage(discordUserId, guildId)))
                 // Check if user in black list or can get reward now.
-                .flatMap(user -> {
-                    if (blacklistUserService.isUserInBlacklist(user.getId())) {
-                        return Mono.error(new Exception("Bạn đang bị cấm truy cập lệnh"));
-                    }
-                    if (!canUserGetReward(user)) {
-                        return Mono.error(new Exception("Vui lòng quay lại sau: " + getWaitMinuteLeftText(user)));
-                    }
-                    return Mono.empty();
-                })
+                .flatMap(errorMessage -> errorMessage == null ? Mono.empty() : Mono.error(new Exception(errorMessage)))
 
                 // Validate recipient address
                 .then(Mono.just(recipientAddress))
@@ -129,7 +117,7 @@ public class FaucetCommand implements SlashCommand {
                             !((List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("accept")).isEmpty()) {
 
                         // update last action for user
-                        userService.saveLatestActionTime(discordUserId);
+                        userUtility.saveUserLatestAction(discordUserId);
 
                         List<String> acceptedTransactions = (List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("accept");
                         String transactionUrl = tokenConfig.getExplorerUrl() + "transaction/" + acceptedTransactions.get(0);
@@ -150,23 +138,4 @@ public class FaucetCommand implements SlashCommand {
 
     }
 
-    public boolean canUserGetReward(User user) {
-        if (user == null || user.getLastActionTime() == null) {
-            return true;
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime lastActionTime = user.getLastActionTime();
-        long elapsedRewardTime = Duration.between(lastActionTime, now).toMinutes();
-
-        return elapsedRewardTime >= faucetConfig.getRewardCoolDownMinute();
-    }
-
-    public String getWaitMinuteLeftText(User user) {
-        LocalDateTime targetTime = user.getLastActionTime().plus(faucetConfig.getRewardCoolDownMinute(), ChronoUnit.MINUTES);
-        LocalDateTime now = LocalDateTime.now();
-
-        Duration between = Duration.between(now, targetTime);
-        return between.toHours() + " giờ " + between.toMinutesPart() + " phút " + between.toSecondsPart() + " giây";
-    }
 }

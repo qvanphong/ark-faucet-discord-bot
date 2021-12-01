@@ -21,7 +21,7 @@ class FaucetConfig {
 
     String aslpApiUrl;
 
-    long rewardCoolDownMinute;
+    long defaultCoolDownMinutes;
 
     public TokenConfig getTokenConfigFromChainName(String chainName) {
         return this.tokens.get(chainName);

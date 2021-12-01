@@ -13,6 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
+import tech.qvanphong.discordfaucet.listener.JoinGuildListener;
+import tech.qvanphong.discordfaucet.listener.QuitGuildListener;
 import tech.qvanphong.discordfaucet.listener.SlashCommandListener;
 
 import java.util.HashMap;
@@ -31,25 +33,20 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    public GatewayDiscordClient discordClient(DiscordBotConfig botConfig, SlashCommandListener slashCommandListener) {
+    public GatewayDiscordClient discordClient(DiscordBotConfig botConfig,
+                                              SlashCommandListener slashCommandListener,
+                                              JoinGuildListener joinGuildListener,
+                                              QuitGuildListener quitGuildListener) {
         String token = botConfig.getToken();
         // Login
         return DiscordClientBuilder.create(token).build()
                 .gateway()
                 .withEventDispatcher(eventDispatcher -> {
                     Flux<Object> joinGuildEvent = eventDispatcher.on(GuildCreateEvent.class)
-                            .flatMap(guildCreateEvent -> {
-                                System.out.println("Joined Guild");
-                                System.out.println(guildCreateEvent);
-                                return Mono.empty();
-                            });
+                            .flatMap(joinGuildListener::handle);
 
                     Flux<Object> exitGuildEvent = eventDispatcher.on(GuildDeleteEvent.class)
-                            .flatMap(guildCreateEvent -> {
-                                System.out.println("Quit Guild");
-                                System.out.println(guildCreateEvent);
-                                return Mono.empty();
-                            });
+                            .flatMap(quitGuildListener::handle);
 
 
                     Flux<Void> slashCommandFlux = eventDispatcher

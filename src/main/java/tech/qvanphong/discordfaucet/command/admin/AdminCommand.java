@@ -8,19 +8,17 @@ import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.command.SlashCommand;
 import tech.qvanphong.discordfaucet.entity.Admin;
 import tech.qvanphong.discordfaucet.entity.User;
-import tech.qvanphong.discordfaucet.service.AdminService;
-import tech.qvanphong.discordfaucet.service.UserService;
+import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import java.util.List;
 
 @Component
-public class AddAdminCommand implements SlashCommand {
-    private AdminService adminService;
-    private UserService userService;
+public class AdminCommand implements SlashCommand {
+    private UserUtility userUtility;
 
-    public AddAdminCommand(AdminService adminService, UserService userService) {
-        this.adminService = adminService;
-        this.userService = userService;
+
+    public AdminCommand(UserUtility userUtility) {
+        this.userUtility = userUtility;
     }
 
     @Override
@@ -57,18 +55,6 @@ public class AddAdminCommand implements SlashCommand {
                 .getOption("user")
                 .isPresent();
 
-//        final long targetUserId = userOptionAvailable ?
-//                event.getOptions()
-//                        .get(0)
-//                        .getOption("user")
-//                        .get()
-//                        .getValue()
-//                        .get()
-//                        .asUser()
-//                        .block()
-//                        .getId()
-//                        .asLong() : 0L;
-
         return event.deferReply()
                 .then(Mono.just(adminAction))
                 .flatMap(action -> {
@@ -78,19 +64,19 @@ public class AddAdminCommand implements SlashCommand {
 
 
                         case "add":
-                            if (adminService.isAdmin(userId)) {
+                            if (userUtility.isAdmin(userId)) {
                                 return Mono
                                         .just(event.getOptions())
                                         .map(applicationCommandInteractionOptions -> applicationCommandInteractionOptions.get(0))
                                         .flatMap(interactionOption -> interactionOption.getOption("user").get().getValue().get().asUser())
                                         .map(user -> user.getId().asLong())
                                         .flatMap(targetUserId -> {
-                                            User targetUser = userService.getOrCreate(targetUserId);
+                                            User targetUser = userUtility.getOrCreateUser(targetUserId);
                                             Admin admin = new Admin();
                                             admin.setUser(targetUser);
                                             admin.setGuildId(guildId);
 
-                                            Admin createdAdmin = adminService.createAdmin(admin);
+                                            Admin createdAdmin = userUtility.createAdmin(admin);
 
                                             return event.editReply(createStatusMessage("Thêm quản trị viên", createdAdmin != null)).then();
                                         });
@@ -99,13 +85,13 @@ public class AddAdminCommand implements SlashCommand {
 
 
                         case "remove":
-                            if (adminService.isAdmin(userId)) {
+                            if (userUtility.isAdmin(userId)) {
                                 return Mono
                                         .just(event.getOptions())
                                         .map(applicationCommandInteractionOptions -> applicationCommandInteractionOptions.get(0))
                                         .flatMap(interactionOption -> interactionOption.getOption("user").get().getValue().get().asUser())
                                         .map(user -> user.getId().asLong())
-                                        .flatMap(targetUserId -> event.editReply(createStatusMessage("Xóa quản trị viên", adminService.removeAdmin(targetUserId))).then());
+                                        .flatMap(targetUserId -> event.editReply(createStatusMessage("Xóa quản trị viên", userUtility.removeAdmin(targetUserId))).then());
                             }
                             return Mono.error(new Exception("Bạn không phải là quản trị viên."));
 
@@ -118,7 +104,7 @@ public class AddAdminCommand implements SlashCommand {
     }
 
     private InteractionReplyEditSpec createListAdminMessage(long guildId) {
-        List<Admin> adminsFromGuild = adminService.getAdminFromGuild(guildId);
+        List<Admin> adminsFromGuild = userUtility.getAdminsFromGuild(guildId);
         StringBuilder descriptionBuilder = new StringBuilder();
 
         if (adminsFromGuild.isEmpty()) {
@@ -145,6 +131,7 @@ public class AddAdminCommand implements SlashCommand {
                 .build();
 
         return InteractionReplyEditSpec.builder()
-                .addEmbed(embed).build();
+                .addEmbed(embed)
+                .build();
     }
 }
