@@ -4,10 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import tech.qvanphong.discordfaucet.entity.Guild;
 
-import javax.transaction.Transactional;
-
 @Repository
-@Transactional
 public interface GuildConfigRepository extends JpaRepository<Guild, Long> {
 
     Guild getGuildConfigByGuildId(long guildId);

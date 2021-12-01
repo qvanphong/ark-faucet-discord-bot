@@ -20,6 +20,6 @@ class Guild {
     @Column(columnDefinition = "boolean default true")
     private boolean isAllRoleAllowed;
 
-    @OneToMany(mappedBy = "guild", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "guild", cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, orphanRemoval = true)
     private List<AllowedRole> allowedRoles;
 }

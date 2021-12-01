@@ -19,4 +19,8 @@ public class AllowedRoleService {
     public List<AllowedRole> getAllowRoles(long guildId) {
         return allowedRolesRepository.getAllowedRolesByGuildGuildId(guildId);
     }
+
+    public AllowedRole getAllowedRole(long roleId) {
+        return allowedRolesRepository.getAllowedRoleByRoleId(roleId);
+    }
 }

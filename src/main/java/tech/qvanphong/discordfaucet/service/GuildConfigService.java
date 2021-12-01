@@ -2,11 +2,10 @@ package tech.qvanphong.discordfaucet.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.entity.Guild;
 import tech.qvanphong.discordfaucet.repository.GuildConfigRepository;
-
-import javax.transaction.Transactional;
 
 @Service
 @Transactional
@@ -37,7 +36,16 @@ public class GuildConfigService {
     }
 
     public Guild getGuildConfig(long guildId) {
-        return repository.getGuildConfigByGuildId(guildId);
+        Guild guildConfigByGuildId = repository.getGuildConfigByGuildId(guildId);
+        // Work around for LazyInitialized bug
+        guildConfigByGuildId.getAllowedRoles().size();
+        return guildConfigByGuildId;
+    }
+
+    public Guild getOrCreate(long guildId) {
+        Guild guildConfig = this.getGuildConfig(guildId);
+        if (guildConfig != null) return guildConfig;
+        return createNewGuildConfig(guildId);
     }
 
     public Guild saveGuildConfig(Guild config) {

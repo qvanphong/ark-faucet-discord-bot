@@ -4,9 +4,12 @@ import discord4j.common.util.Snowflake;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.MemberData;
 import discord4j.rest.RestClient;
+import discord4j.rest.entity.RestGuild;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
 import tech.qvanphong.discordfaucet.entity.Admin;
+import tech.qvanphong.discordfaucet.entity.AllowedRole;
 import tech.qvanphong.discordfaucet.entity.Guild;
 import tech.qvanphong.discordfaucet.entity.User;
 import tech.qvanphong.discordfaucet.service.*;
@@ -24,30 +27,34 @@ public class UserUtility {
     private GuildConfigService guildConfigService;
     private AllowedRoleService allowedRoleService;
     private RestClient restClient;
+    private DiscordBotConfig botConfig;
+
 
     @Autowired
-    public UserUtility(UserService userService, AdminService adminService, BlacklistUserService blacklistUserService, GuildConfigService guildConfigService, AllowedRoleService allowedRoleService, RestClient restClient) {
+    public UserUtility(UserService userService, AdminService adminService, BlacklistUserService blacklistUserService, GuildConfigService guildConfigService, AllowedRoleService allowedRoleService, RestClient restClient, DiscordBotConfig botConfig) {
         this.userService = userService;
         this.adminService = adminService;
         this.blacklistUserService = blacklistUserService;
         this.guildConfigService = guildConfigService;
         this.allowedRoleService = allowedRoleService;
         this.restClient = restClient;
+        this.botConfig = botConfig;
+
     }
 
     public String getClaimRewardErrorMessage(long userId, long guildId) {
-        User user = userService.getUser(userId);
+        User user = userService.getOrCreate(userId);
         Guild guildConfig = guildConfigService.getGuildConfig(guildId);
 
-        if (isGuildAllow(user, guildConfig)) return "Bạn không có sử dụng lệnh.";
+        if (!isGuildAllow(user, guildConfig)) return "Bạn không thể sử dụng lệnh do faucet được thiết lập cho 1 số role cụ thể.";
         if (isUserInBlackList(user)) return "Bạn đang bị chặn sử dụng lệnh";
         if (!canClaimByRewardTime(user, guildConfig)) return "Vui lòng quay lại sau " + getWaitMinuteLeftText(user, guildConfig);
 
-        return null;
+        return "";
     }
 
     public boolean isAdmin(long userId) {
-        return adminService.isAdmin(userId);
+        return userId == botConfig.getOwnerId() || adminService.isAdmin(userId);
     }
 
     public Admin createAdmin(Admin admin) {
@@ -70,6 +77,10 @@ public class UserUtility {
         userService.saveLatestActionTime(userId);
     }
 
+    public AllowedRole getAllowedRole(long roleId) {
+        return allowedRoleService.getAllowedRole(roleId);
+    }
+
     private boolean canClaimByRewardTime(User user, Guild guildConfig) {
         if (user == null || user.getLastActionTime() == null || guildConfig == null) {
             return true;
@@ -90,9 +101,9 @@ public class UserUtility {
         if (guildConfig.isAllRoleAllowed()) {
             return true;
         } else {
-            MemberData memberData = restClient.getGuildById(Snowflake.of(guildConfig.getGuildId()))
-                    .getMember(Snowflake.of(user.getId()))
-                    .block();
+            RestGuild guildById = restClient.getGuildById(Snowflake.of(guildConfig.getGuildId()));
+            MemberData memberData = guildById.getMember(Snowflake.of(user.getId())).block();
+
             List<Id> memberRole = memberData.roles();
             return memberRole.stream().anyMatch(id -> guildConfig.getAllowedRoles().stream().anyMatch(allowedRole -> allowedRole.getRoleId() == id.asLong()));
 

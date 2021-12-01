@@ -62,8 +62,7 @@ public class FaucetCommand implements SlashCommand {
         return event.deferReply()
                 .then(Mono.just(userUtility.getClaimRewardErrorMessage(discordUserId, guildId)))
                 // Check if user in black list or can get reward now.
-                .flatMap(errorMessage -> errorMessage == null ? Mono.empty() : Mono.error(new Exception(errorMessage)))
-
+                .flatMap(errorMessage -> errorMessage.isEmpty() ? Mono.empty() : Mono.error(new Exception(errorMessage)))
                 // Validate recipient address
                 .then(Mono.just(recipientAddress))
                 .flatMap(recipient -> {

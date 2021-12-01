@@ -13,12 +13,10 @@ import java.util.List;
 @Transactional
 public class AdminService {
     private AdminRepository repository;
-    private DiscordBotConfig botConfig;
 
     @Autowired
     public AdminService(AdminRepository repository, DiscordBotConfig botConfig) {
         this.repository = repository;
-        this.botConfig = botConfig;
     }
 
     public List<Admin> getAdminFromGuild(long guildId) {
@@ -30,7 +28,7 @@ public class AdminService {
     }
 
     public boolean isAdmin(long id) {
-        return id == botConfig.getOwnerId() || repository.existsAdminByUserId(id);
+        return repository.existsAdminByUserId(id);
     }
 
     public boolean removeAdmin(long id) {

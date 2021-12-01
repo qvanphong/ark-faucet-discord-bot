@@ -2,6 +2,7 @@ package tech.qvanphong.discordfaucet.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tech.qvanphong.discordfaucet.entity.User;
 import tech.qvanphong.discordfaucet.repository.UserRepository;
 
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class UserService {
     private UserRepository userRepository;
 

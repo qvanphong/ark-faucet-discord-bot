@@ -1,0 +1,68 @@
+{
+  "name": "config",
+  "description": "Thiết lập bot (dành cho quản trị viên)",
+  "options": [
+    {
+      "name": "cooldown",
+      "description": "Thiết lập thời gian nhận token",
+      "type": 1,
+      "options": [
+        {
+          "name": "minutes",
+          "description": "Số phút để nhận token mỗi đợt.",
+          "type": 4,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "allowall",
+      "description": "Cho phép tất cả người dùng dùng lệnh /faucet",
+      "type": 1,
+      "options": [
+        {
+          "name": "allow",
+          "description": "Cho phép tất cả mọi người dùng lệnh",
+          "type": 5,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "allowrole",
+      "description": "Cho phép tất cả người dùng có role nhập vào có thể dùng lệnh /faucet",
+      "type": 1,
+      "options": [
+        {
+          "name": "role",
+          "description": "Role muốn cho phép",
+          "type": 8,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "removeallowrole",
+      "description": "Xóa role có quyền dùng lệnh /faucet",
+      "type": 1,
+      "options": [
+        {
+          "name": "role",
+          "description": "Role muốn xóa",
+          "type": 8,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "listallowroles",
+      "description": "Hiển thị danh sách role cho phép sử dụng lệnh /faucet",
+      "type": 1
+    },
+    {
+      "name": "show",
+      "description": "Xem các config tại server này.",
+      "type": 1
+    }
+  ]
+}

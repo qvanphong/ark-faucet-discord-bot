@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface AllowedRolesRepository extends JpaRepository<AllowedRole, Integer> {
     List<AllowedRole> getAllowedRolesByGuildGuildId(long guildId);
+
+    AllowedRole getAllowedRoleByRoleId(long roleId);
 }
