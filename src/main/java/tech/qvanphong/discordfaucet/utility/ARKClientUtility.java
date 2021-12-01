@@ -30,11 +30,11 @@ public class ARKClientUtility {
 
     public Connection createConnection(String chainName) {
         TokenConfig tokenInfo= faucetConfig.getTokenConfigFromChainName(chainName);
-        if (!tokenInfo.getBackupApiUrl().isEmpty()) {
+        if (!tokenInfo.getBackupApiUrls().isEmpty()) {
             OkHttpClient okHttpClient = new OkHttpClient();
 
             // Add default api to list. In order to reconnect to default api url
-            ArrayList<String> apiUrls = new ArrayList<>(tokenInfo.getBackupApiUrl());
+            ArrayList<String> apiUrls = new ArrayList<>(tokenInfo.getBackupApiUrls());
             apiUrls.add(tokenInfo.getApiUrl());
 
             for (String apiUrl : apiUrls) {

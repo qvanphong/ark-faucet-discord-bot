@@ -17,7 +17,7 @@ class FaucetConfig {
 
     Map<String, TokenConfig> tokens = new HashMap<>();
 
-    String passphraseLocation;
+    String tokenSettingLocation;
 
     String aslpApiUrl;
 
