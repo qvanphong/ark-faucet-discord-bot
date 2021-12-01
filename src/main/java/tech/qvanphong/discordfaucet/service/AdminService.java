@@ -21,8 +21,8 @@ public class AdminService {
         this.botConfig = botConfig;
     }
 
-    public List<Admin> getAdminFromServer(long serverId) {
-        return repository.findAllByServerId(serverId);
+    public List<Admin> getAdminFromGuild(long guildId) {
+        return repository.findAllByGuildId(guildId);
     }
 
     public Admin createAdmin(Admin admin) {

@@ -20,7 +20,7 @@ public class DatabaseTests {
 
         BlacklistUser blacklistUser = new BlacklistUser();
         blacklistUser.setUser(user);
-        blacklistUser.setServerId(1L);
+        blacklistUser.setGuildId(1L);
 
         BlacklistUser savedBlacklistUser = blacklistUserService.addBlacklistUser(blacklistUser);
         Assertions.assertNotEquals(savedBlacklistUser, null);
@@ -38,7 +38,7 @@ public class DatabaseTests {
 
         Admin admin = new Admin();
         admin.setUser(user);
-        admin.setServerId(051L);
+        admin.setGuildId(051L);
 
         Admin savedAdmin = adminService.createAdmin(admin);
         boolean isAdmin = adminService.isAdmin(4234L);

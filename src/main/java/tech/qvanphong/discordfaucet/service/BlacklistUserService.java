@@ -17,6 +17,7 @@ public class BlacklistUserService {
         this.blacklistUserRepository = blacklistUserRepository;
     }
 
+//    TODO: chưa đúng, làm thế này thì user sẽ bị blacklist ở mọi server
     public boolean isUserInBlacklist(long userId) {
         return blacklistUserRepository.existsBlacklistUserByUserId(userId);
     }

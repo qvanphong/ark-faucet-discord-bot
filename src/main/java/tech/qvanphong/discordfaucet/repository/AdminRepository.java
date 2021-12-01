@@ -12,5 +12,5 @@ public interface AdminRepository extends JpaRepository<Admin, Integer> {
 
     Integer deleteAdminByUserId(long userId);
 
-    List<Admin> findAllByServerId(long serverId);
+    List<Admin> findAllByGuildId(long guildId);
 }

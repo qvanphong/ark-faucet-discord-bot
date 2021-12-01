@@ -16,5 +16,5 @@ class Admin {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private long serverId;
+    private long guildId;
 }

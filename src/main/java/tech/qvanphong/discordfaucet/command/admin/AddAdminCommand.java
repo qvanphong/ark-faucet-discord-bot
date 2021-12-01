@@ -88,7 +88,7 @@ public class AddAdminCommand implements SlashCommand {
                                             User targetUser = userService.getOrCreate(targetUserId);
                                             Admin admin = new Admin();
                                             admin.setUser(targetUser);
-                                            admin.setServerId(guildId);
+                                            admin.setGuildId(guildId);
 
                                             Admin createdAdmin = adminService.createAdmin(admin);
 
@@ -117,14 +117,14 @@ public class AddAdminCommand implements SlashCommand {
                 .onErrorResume(throwable -> event.editReply(throwable.getMessage()).then());
     }
 
-    private InteractionReplyEditSpec createListAdminMessage(long serverId) {
-        List<Admin> adminsFromServer = adminService.getAdminFromServer(serverId);
+    private InteractionReplyEditSpec createListAdminMessage(long guildId) {
+        List<Admin> adminsFromGuild = adminService.getAdminFromGuild(guildId);
         StringBuilder descriptionBuilder = new StringBuilder();
 
-        if (adminsFromServer.isEmpty()) {
+        if (adminsFromGuild.isEmpty()) {
             descriptionBuilder.append("Không có");
         } else {
-            adminsFromServer.forEach(admin -> {
+            adminsFromGuild.forEach(admin -> {
                 descriptionBuilder.append(String.format("<@!%s>\n", admin.getUser().getId()));
             });
         }

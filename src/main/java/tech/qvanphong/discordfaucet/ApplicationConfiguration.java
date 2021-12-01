@@ -2,6 +2,8 @@ package tech.qvanphong.discordfaucet;
 
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.guild.GuildCreateEvent;
+import discord4j.core.event.domain.guild.GuildDeleteEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.rest.RestClient;
 import org.arkecosystem.client.Connection;
@@ -35,11 +37,26 @@ public class ApplicationConfiguration {
         return DiscordClientBuilder.create(token).build()
                 .gateway()
                 .withEventDispatcher(eventDispatcher -> {
+                    Flux<Object> joinGuildEvent = eventDispatcher.on(GuildCreateEvent.class)
+                            .flatMap(guildCreateEvent -> {
+                                System.out.println("Joined Guild");
+                                System.out.println(guildCreateEvent);
+                                return Mono.empty();
+                            });
+
+                    Flux<Object> exitGuildEvent = eventDispatcher.on(GuildDeleteEvent.class)
+                            .flatMap(guildCreateEvent -> {
+                                System.out.println("Quit Guild");
+                                System.out.println(guildCreateEvent);
+                                return Mono.empty();
+                            });
+
+
                     Flux<Void> slashCommandFlux = eventDispatcher
                             .on(ChatInputInteractionEvent.class)
                             .flatMap(slashCommandListener::handle);
 
-                    return Mono.when(slashCommandFlux);
+                    return Mono.when(slashCommandFlux, joinGuildEvent, exitGuildEvent);
                 })
                 .login()
                 .block();
