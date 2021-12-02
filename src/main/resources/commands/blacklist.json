@@ -1,0 +1,33 @@
+{
+  "name": "blacklist",
+  "description": "Danh sách cấm dùng lệnh /faucet",
+  "options": [
+    {
+      "name": "add",
+      "description": "Thêm người dùng vào danh sách cấm",
+      "type": 1,
+      "options": [
+        {
+          "name": "user",
+          "description": "Người dùng mong muốn được thêm vào danh sách cấm",
+          "required": true,
+          "type": 6
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Loại người dùng khỏi danh sách cấm",
+      "type": 1,
+      "options": [
+        {
+          "name": "user",
+          "description": "Người dùng mong muốn được xóa khỏi danh sách cấm",
+          "required": true,
+          "type": 6
+        }
+      ]
+    }
+  ]
+
+}

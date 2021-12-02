@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import tech.qvanphong.discordfaucet.entity.*;
 import tech.qvanphong.discordfaucet.repository.AllowedRolesRepository;
 import tech.qvanphong.discordfaucet.service.*;
+import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import javax.transaction.Transactional;
 import java.util.ArrayList;
@@ -19,13 +20,52 @@ public class DatabaseTests {
     public void saveBlacklistUser_shouldSave(@Autowired BlacklistUserService blacklistUserService, @Autowired UserService userService) {
         User user = userService.createUser(1);
 
+        BlacklistUserPK blacklistUserPK = new BlacklistUserPK();
+        blacklistUserPK.setUser(user);
+        blacklistUserPK.setGuildId(1L);
         BlacklistUser blacklistUser = new BlacklistUser();
-        blacklistUser.setUser(user);
-        blacklistUser.setGuildId(1L);
+        blacklistUser.setId(blacklistUserPK);
 
         BlacklistUser savedBlacklistUser = blacklistUserService.addBlacklistUser(blacklistUser);
         Assertions.assertNotEquals(savedBlacklistUser, null);
     }
+
+
+    @Test
+    public void createBlacklistUser_shouldNotHaveDuplicate(@Autowired UserUtility userUtility) {
+        BlacklistUser blacklistUser = userUtility.createBlacklistUser(1, 1);
+        List<BlacklistUser> blacklistUsers = userUtility.getBlacklistUsers(1);
+        int firstCreationSize = blacklistUsers.size();
+
+        System.out.println(blacklistUser);
+        System.out.println(blacklistUsers);
+
+        BlacklistUser blacklistUser2 = userUtility.createBlacklistUser(1, 1);
+        List<BlacklistUser> blacklistUsers2 = userUtility.getBlacklistUsers(1);
+
+        int secondCreationSize = blacklistUsers2.size();
+
+        System.out.println(blacklistUser2);
+        System.out.println(blacklistUsers2);
+
+        assert  firstCreationSize == secondCreationSize ;
+    }
+
+    @Test
+    public void createBlacklistUser_AndShouldDeletable(@Autowired UserUtility userUtility) {
+        userUtility.createBlacklistUser(1, 1);
+
+        List<BlacklistUser> blacklistUsers = userUtility.getBlacklistUsers(1);
+        int firstCreationSize = blacklistUsers.size();
+
+        boolean canDelete = userUtility.removeBlacklistUser(1, 1);
+        List<BlacklistUser> blacklistUsersAfterDelete = userUtility.getBlacklistUsers(1);
+
+        assert  firstCreationSize == 1 && canDelete && blacklistUsersAfterDelete.size() == 0;
+    }
+
+
+
 
     @Test
     public void getUser_shouldCreateIfUserNotExist(@Autowired UserService userService) {
@@ -176,5 +216,6 @@ public class DatabaseTests {
 
         assert newlyCreatedRolesSize == 1 && afterDeleteRoleSize == 0;
     }
+
 
 }

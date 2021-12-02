@@ -38,7 +38,7 @@ public class GuildConfigService {
     public Guild getGuildConfig(long guildId) {
         Guild guildConfigByGuildId = repository.getGuildConfigByGuildId(guildId);
         // Work around for LazyInitialized bug
-        guildConfigByGuildId.getAllowedRoles().size();
+        if (guildConfigByGuildId != null && guildConfigByGuildId.getAllowedRoles() != null) guildConfigByGuildId.getAllowedRoles().size();
         return guildConfigByGuildId;
     }
 

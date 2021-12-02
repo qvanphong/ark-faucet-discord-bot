@@ -8,10 +8,7 @@ import discord4j.rest.entity.RestGuild;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
-import tech.qvanphong.discordfaucet.entity.Admin;
-import tech.qvanphong.discordfaucet.entity.AllowedRole;
-import tech.qvanphong.discordfaucet.entity.Guild;
-import tech.qvanphong.discordfaucet.entity.User;
+import tech.qvanphong.discordfaucet.entity.*;
 import tech.qvanphong.discordfaucet.service.*;
 
 import java.time.Duration;
@@ -47,7 +44,7 @@ public class UserUtility {
         Guild guildConfig = guildConfigService.getGuildConfig(guildId);
 
         if (!isGuildAllow(user, guildConfig)) return "Bạn không thể sử dụng lệnh do faucet được thiết lập cho 1 số role cụ thể.";
-        if (isUserInBlackList(user)) return "Bạn đang bị chặn sử dụng lệnh";
+        if (isUserBlackListed(userId, guildId)) return "Bạn đang bị chặn sử dụng lệnh";
         if (!canClaimByRewardTime(user, guildConfig)) return "Vui lòng quay lại sau " + getWaitMinuteLeftText(user, guildConfig);
 
         return "";
@@ -97,8 +94,28 @@ public class UserUtility {
         return elapsedRewardTime >= guildConfig.getCoolDownMinutes();
     }
 
-    private boolean isUserInBlackList(User user) {
-        return blacklistUserService.isUserInBlacklist(user.getId());
+    public boolean isUserBlackListed(long userId, long guildId) {
+        return blacklistUserService.isUserInBlacklist(userId, guildId);
+    }
+
+    public BlacklistUser createBlacklistUser(long userId, long guildId) {
+        User user = getOrCreateUser(userId);
+
+        BlacklistUserPK blacklistUserPK = new BlacklistUserPK();
+        blacklistUserPK.setUser(user);
+        blacklistUserPK.setGuildId(guildId);
+        BlacklistUser blacklistUser = new BlacklistUser();
+        blacklistUser.setId(blacklistUserPK);
+
+        return blacklistUserService.addBlacklistUser(blacklistUser);
+    }
+
+    public List<BlacklistUser> getBlacklistUsers(long guildId) {
+        return blacklistUserService.getBlacklistUsers(guildId);
+    }
+
+    public boolean removeBlacklistUser(long userId, long guildId) {
+        return blacklistUserService.removeBlackListUser(userId, guildId);
     }
 
     private boolean isGuildAllow(User user, Guild guildConfig) {
