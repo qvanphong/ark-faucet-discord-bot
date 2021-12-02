@@ -81,6 +81,10 @@ public class UserUtility {
         return allowedRoleService.getAllowedRole(roleId);
     }
 
+    public long getBotOwnerUserId() {
+        return botConfig.getOwnerId();
+    }
+
     private boolean canClaimByRewardTime(User user, Guild guildConfig) {
         if (user == null || user.getLastActionTime() == null || guildConfig == null) {
             return true;

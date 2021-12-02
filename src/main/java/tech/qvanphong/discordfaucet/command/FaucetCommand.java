@@ -1,6 +1,9 @@
 package tech.qvanphong.discordfaucet.command;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.User;
 import org.arkecosystem.client.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +15,7 @@ import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +66,7 @@ public class FaucetCommand implements SlashCommand {
         return event.deferReply()
                 .then(Mono.just(userUtility.getClaimRewardErrorMessage(discordUserId, guildId)))
                 // Check if user in black list or can get reward now.
-                .flatMap(errorMessage -> errorMessage.isEmpty() ? Mono.empty() : Mono.error(new Exception(errorMessage)))
+                .flatMap(errorMessage -> errorMessage.isEmpty() ? Mono.empty() : Mono.error(new Throwable(errorMessage)))
                 // Validate recipient address
                 .then(Mono.just(recipientAddress))
                 .flatMap(recipient -> {
@@ -71,7 +75,7 @@ public class FaucetCommand implements SlashCommand {
                 })
                 .flatMap(isAddressValid -> {
                     if (!isAddressValid) {
-                        return Mono.error(new Exception("Địa chỉ ví nhập vào không hợp lệ, hãy kiểm tra lại chắc chắn bạn đã nhập đúng ví " + selectedToken.toUpperCase()));
+                        return Mono.error(new Throwable("Địa chỉ ví nhập vào không hợp lệ, hãy kiểm tra lại chắc chắn bạn đã nhập đúng ví " + selectedToken.toUpperCase()));
                     }
                     return Mono.just(tokenConfig.getSenderAddress());
                 })
@@ -80,15 +84,15 @@ public class FaucetCommand implements SlashCommand {
                 .map(senderAddress -> arkClientUtility.getAddressInfo(senderAddress, selectedToken))
                 .flatMap(walletInfo -> {
                     if (walletInfo == null || !walletInfo.containsKey("data")) {
-                        LOGGER.error(walletInfo.toString());
-                        return Mono.error(new Exception("Có lỗi khi thực hiện giao dịch (Không lấy được thông tin ví người gửi)"));
+                        LOGGER.error(walletInfo != null ? walletInfo.toString() : null);
+                        return Mono.error(new Throwable("Có lỗi khi thực hiện giao dịch", new Throwable("Không fetch được thông tin ví sender")));
                     }
 
                     // check amount
                     Map<String, String> data = (Map<String, String>) walletInfo.get("data");
 
                     if (Long.parseLong(data.get("balance")) < tokenConfig.getRewardAmount() + tokenConfig.getFee()) {
-                        return Mono.error(new Exception("Số dư ví không đủ, vui lòng liên hệ quản trị viên."));
+                        return Mono.error(new Throwable("Số dư ví không đủ, vui lòng liên hệ quản trị viên.", new Throwable("Số dư ví " + selectedToken + " không đủ.")));
                     }
 
                     // push nonce to create transaction
@@ -103,7 +107,7 @@ public class FaucetCommand implements SlashCommand {
                     if (transaction != null)
                         return Mono.just(arkClientUtility.broadcastTransaction(transaction, selectedToken));
 
-                    return Mono.error(new Exception("Có lỗi khi thực hiện giao dịch"));
+                    return Mono.error(new Throwable("Có lỗi khi thực hiện giao dịch", new Throwable("Không tạo được transaction")));
                 })
                 // Response transaction status
                 .flatMap(broadCastedTransaction -> {
@@ -130,10 +134,38 @@ public class FaucetCommand implements SlashCommand {
                                 .then();
                     }
 
-                    LOGGER.error(broadCastedTransaction.toString());
-                    return Mono.error(new Exception("Có lỗi khi thực hiện giao dịch"));
+                    LOGGER.error(broadCastedTransaction != null ? broadCastedTransaction.toString() : "broadCastedTransaction null");
+                    return Mono.error(new Throwable("Có lỗi khi thực hiện giao dịch", new Throwable("transaction: " + broadCastedTransaction)));
                 })
-                .onErrorResume(throwable -> event.editReply(throwable.getMessage()).then());
+                .onErrorResume(throwable -> event.editReply(throwable.getMessage())
+                        .then(event.getClient()
+                                .getUserById(Snowflake.of(userUtility.getBotOwnerUserId()))
+                                .flatMap(User::getPrivateChannel)
+                                .flatMap(privateChannel -> {
+                                    String time = LocalDateTime.now().toString();
+                                    String commandName = event.getCommandName();
+                                    String userUsedCommand = event.getInteraction().getUser().getUsername();
+                                    String userIdUsedCommand = event.getInteraction().getUser().getUserData().id().asString();
+
+                                    if (throwable.getCause() != null) {
+                                        return event.getInteraction()
+                                                .getGuild()
+                                                .map(Guild::getName)
+                                                .flatMap(guildName -> privateChannel
+                                                        .createMessage(String.format("```Time: %s\nGuild: %s\nUser: %s (%s)\nCommand: %s\nError:\n%s```",
+                                                                time,
+                                                                guildName,
+                                                                userUsedCommand,
+                                                                userIdUsedCommand,
+                                                                commandName,
+                                                                throwable.getCause().getMessage()))
+                                                        .onErrorResume(ignore -> Mono.empty()));
+                                    } else {
+                                        return Mono.empty();
+                                    }
+                                })
+                                .then()
+                        ));
 
     }
 
