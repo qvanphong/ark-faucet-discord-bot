@@ -11,6 +11,7 @@ import tech.qvanphong.discordfaucet.command.SlashCommand;
 import tech.qvanphong.discordfaucet.entity.AllowedRole;
 import tech.qvanphong.discordfaucet.entity.Guild;
 import tech.qvanphong.discordfaucet.service.GuildConfigService;
+import tech.qvanphong.discordfaucet.utility.FaucetUtility;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import java.util.List;
@@ -19,11 +20,13 @@ import java.util.List;
 public class ConfigCommand implements SlashCommand {
     private GuildConfigService guildConfigService;
     private UserUtility userUtility;
+    private FaucetUtility faucetUtility;
 
     @Autowired
-    public ConfigCommand(GuildConfigService guildConfigService, UserUtility userUtility) {
+    public ConfigCommand(GuildConfigService guildConfigService, UserUtility userUtility, FaucetUtility faucetUtility) {
         this.guildConfigService = guildConfigService;
         this.userUtility = userUtility;
+        this.faucetUtility = faucetUtility;
     }
 
     @Override
@@ -39,6 +42,7 @@ public class ConfigCommand implements SlashCommand {
         long guildId = event.getInteraction().getGuildId().get().asLong();
 
         return event.deferReply()
+                .withEphemeral(true)
                 .then(Mono.just(userUtility.isAdmin(event.getInteraction().getUser().getId().asLong())))
                 .flatMap(isAdmin -> isAdmin ? Mono.empty() : Mono.error(new Exception("Bạn không có quyền sử dụng lệnh này")))
                 .then(Mono.just(subCommandInteractionOption.getName()))
@@ -125,15 +129,16 @@ public class ConfigCommand implements SlashCommand {
                                                             .description(String.format("Thời gian nhận mỗi đợt: %d phút\nCho phép mọi người dùng dùng lệnh: %s",
                                                                     guildConfig.getCoolDownMinutes(), guildConfig.isAllRoleAllowed() ? "Có" : "Không"))
                                                             .build())
-                                                    .build()))
-                                    ;
+                                                    .build()));
+
+                        case "reloadtokenconfig":
+                            faucetUtility.readConfig();
+                            return event.editReply("Đã cập nhật config mới của token");
+
                     }
                     return Mono.empty();
                 })
-                .onErrorResume(throwable -> {
-                    throwable.printStackTrace();
-                    return event.editReply(throwable.getMessage());
-                })
+                .onErrorResume(throwable -> event.editReply(throwable.getMessage()))
                 .then();
     }
 }

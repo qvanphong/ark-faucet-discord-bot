@@ -13,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.User;
-import tech.qvanphong.discordfaucet.network.bind.BINDTestnet;
 import tech.qvanphong.discordfaucet.service.UserService;
 
 import java.io.IOException;
@@ -66,7 +65,6 @@ class ApplicationTests {
 
     @Test
     void getWIFFromPrivateTest() {
-        Network.set(new BINDTestnet());
         try {
             String wif = WIF.fromPassphrase(senderPrivateKey);
             System.out.println(wif);

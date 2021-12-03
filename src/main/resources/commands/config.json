@@ -63,6 +63,11 @@
       "name": "show",
       "description": "Xem các config tại server này.",
       "type": 1
+    },
+    {
+      "name": "reloadtokenconfig",
+      "description": "Đọc lại các config của token",
+      "type": 1
     }
   ]
 }
