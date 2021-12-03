@@ -35,7 +35,7 @@ public class FaucetUtility {
         File tokenSettingDir = new File(faucetConfig.getTokenSettingLocation() + guildId);
         if (!tokenSettingDir.exists()) {
             try {
-                Files.createDirectory(tokenSettingDir.toPath());
+                Files.createDirectories(tokenSettingDir.toPath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
