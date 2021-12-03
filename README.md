@@ -1,46 +1,59 @@
-## **ARK Faucet Discord bot**
+# **ARK Faucet Discord bot**
 ---
 A Discord bot that giving free ARK token (and any token based ARK).
 
 What this discord bot support:
 - [x] ARK (mainnet, devnet)
 - [x] BIND (devnet, waiting to test mainnet)
-- [x] bARK 
+- [x] bARK
 - [ ] Qredit
 
-#### Setup
+## Setup
 - Clone this repo
 - run `mvn install`
-- Build to jar file or run with Spring Boot
+- Build to jar file using `mvn clean package`
+- Setting up your token profiles following `faucet.token-setting-location` in `application.properties`
+- run jar file by `java -jar built_jar_file.jar`
 
-#### application.properties setup
-```# Discord bot setup
-discord-bot.token=
 
-# App setup
-app.passphrase-location=D:\\
-
-# Bind Token
-app.token.bind.sender-address=
-app.token.bind.explorer-url=https://testnet.bindscan.io/
-app.token.bind.api-url=https://api.nos.dev/api/v2/
-app.token.bind.allow-vendor-field=false
-# reward: 1 BIND, fee: 0.1 BIND
-app.token.bind.fee=10000000
-app.token.bind.reward-amount=100000000
-app.token.bind.network=90
-app.token.bind.token-symbol=\u00DF
-
-# ARK Token
-app.token.ark.sender-address=
-app.token.ark.explorer-url=https://dexplorer.ark.io/
-app.token.ark.api-url=http://167.114.43.43:4003/api/
-app.token.ark.backup-api-url[0]=http://167.114.43.43:4003/api/
-# reward: 1 ARK, fee: 0.008ARK
-app.token.ark.reward-amount=100000000
-app.token.ark.fee=800000
-app.token.ark.network=30
-app.token.ark.token-symbol=DARK
-
-#....
+## application.properties setup
 ```
+# Discord bot setup
+discord-bot.token=
+discord-bot.owner-id=
+
+# Database setup
+spring.datasource.url=
+spring.datasource.driverClassName=
+spring.datasource.username=
+spring.datasource.password=
+spring.jpa.database-platform=
+spring.jpa.hibernate.ddl-auto=update
+
+# faucet setup
+faucet.token-setting-location=
+faucet.aslp-api-url=https://aslp.qredit.dev/api/
+faucet.default-cool-down-minutes=180
+```
+
+
+## Token profile setting
+- Create [token_symbol].token file following the that you setup in `faucet.token-setting-location` in `application.properties`
+(token_symbol must match `value` value in `src\main\resources\commands\faucet.json`, for example: I setting up 3 token in faucet.json, these are ark, bind, bark (following their `value` key), the token profile file must be named ark.token, bind.token, bark.token)
+- the json structure following `TokenConfig.java` structure
+```
+{
+    "sender_address": "",
+	"explorer_url": "https://explorer.ark.io/",
+	"api_url": "https://api.ark.io/api/",
+	"reward_amount": 1,
+	"fee": 800000,
+	"network": 23,
+	"symbol": "ARK",
+	"is_aslp": true,
+	"aslp_reward": 1,
+	"aslp_token_id": "",
+	"passphrase": ""
+}
+```
+(no need to setup these aslp if you are not using aslp token)
