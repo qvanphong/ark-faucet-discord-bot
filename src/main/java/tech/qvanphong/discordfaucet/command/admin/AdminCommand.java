@@ -56,6 +56,7 @@ public class AdminCommand implements SlashCommand {
                 .isPresent();
 
         return event.deferReply()
+                .withEphemeral(!adminAction.equals("list"))
                 .then(Mono.just(adminAction))
                 .flatMap(action -> {
                     switch (action) {
