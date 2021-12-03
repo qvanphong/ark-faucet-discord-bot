@@ -14,19 +14,18 @@ import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
 public class ARKClientUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private FaucetConfig faucetConfig;
-    private Map<String, Connection> networkConnection;
 
-    public ARKClientUtility(FaucetConfig faucetConfig, Map<String, Connection> networkConnections) {
+
+    public ARKClientUtility(FaucetConfig faucetConfig) {
         this.faucetConfig = faucetConfig;
-        this.networkConnection = networkConnections;
     }
 //
 //    public Connection createConnection(String chainName) {
@@ -73,14 +72,16 @@ public class ARKClientUtility {
     }
 
     public Map<String, Object> getAddressInfo(String address, String chainName) {
-        Connection connection = networkConnection.get(chainName);
-        if (connection != null) {
-            try {
-                return connection.api().wallets.show(address);
+        Map<String, Object> connectionConfig = new HashMap<>();
+        connectionConfig.put("host", faucetConfig.getTokenApis().get(chainName));
+        Connection connection = new Connection(connectionConfig);
 
-            } catch (SocketTimeoutException e) {
-                LOGGER.error(e.toString());
-                e.printStackTrace();
+        try {
+            return connection.api().wallets.show(address);
+
+        } catch (IOException e) {
+            LOGGER.error(e.toString());
+            e.printStackTrace();
 //                Connection recreatedConnection = this.createConnection(chainName);
 //                if (recreatedConnection != null) {
 //                    networkConnection.replace(chainName, recreatedConnection);
@@ -90,16 +91,12 @@ public class ARKClientUtility {
 //                    LOGGER.error(e.toString());
 //                    e.printStackTrace();
 //                }
-            } catch (IOException e) {
-                LOGGER.error(e.toString());
-                e.printStackTrace();
-            }
         }
 
         return null;
     }
 
-    public Transaction createTransaction(TokenConfig tokenInfo, String chainName, String recipientAddress, long nonce) {
+    public Transaction createTransaction(TokenConfig tokenInfo, String recipientAddress, long nonce) {
         if (!tokenInfo.isAslp()) {
             return new TransferBuilder()
                     .network(tokenInfo.getNetwork())
@@ -141,7 +138,10 @@ public class ARKClientUtility {
     }
 
     public Map<String, Object> broadcastTransaction(Transaction transaction, String chainName) {
-        Connection connection = networkConnection.get(chainName);
+        Map<String, Object> connectionConfig = new HashMap<>();
+        connectionConfig.put("host", faucetConfig.getTokenApis().get(chainName));
+        Connection connection = new Connection(connectionConfig);
+
         if (connection != null) {
             ArrayList<Map<String, ?>> transactionPayload = new ArrayList<>();
             transactionPayload.add(transaction.toHashMap());

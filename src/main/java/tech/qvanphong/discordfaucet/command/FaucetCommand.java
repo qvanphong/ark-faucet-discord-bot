@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
-import org.arkecosystem.client.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,17 +21,14 @@ import java.util.Optional;
 @Component
 public class FaucetCommand implements SlashCommand {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
-    private Map<String, Connection> networkConnection;
     private Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
     private ARKClientUtility arkClientUtility;
     private UserUtility userUtility;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnection,
-                         Map<Long, Map<String, TokenConfig>> guildTokenConfigs,
+    public FaucetCommand(Map<Long, Map<String, TokenConfig>> guildTokenConfigs,
                          ARKClientUtility arkClientUtility,
                          UserUtility userUtility) {
-        this.networkConnection = networkConnection;
         this.guildTokenConfigs = guildTokenConfigs;
         this.arkClientUtility = arkClientUtility;
         this.userUtility = userUtility;
@@ -49,17 +45,14 @@ public class FaucetCommand implements SlashCommand {
         Optional<Snowflake> guildIdOptional = event.getInteraction().getGuildId();
         if (guildIdOptional.isEmpty()) return event.reply("Không lấy được guild id");
 
+        long guildId = guildIdOptional.get().asLong();
         String selectedToken = event.getOption("token").get().getValue().get().asString();
         String recipientAddress = event.getOption("address").get().getValue().get().asString();
-        long guildId = guildIdOptional.get().asLong();
-        Connection connection = networkConnection.get(selectedToken);
         Map<String, TokenConfig> guildTokenConfig = guildTokenConfigs.get(guildId);
         TokenConfig tokenConfig = guildTokenConfig == null ? null : guildTokenConfig.get(selectedToken);
 
-
-
         // Check if this network is already config
-        if (connection == null || tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty()) {
+        if (tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty()) {
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
         }
 
@@ -104,7 +97,7 @@ public class FaucetCommand implements SlashCommand {
                 })
 
                 // Create Transaction
-                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(tokenConfig, selectedToken, recipientAddress, nonce)))
+                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(tokenConfig, recipientAddress, nonce)))
 
                 // Broadcast transaction
                 .flatMap(transaction -> {
