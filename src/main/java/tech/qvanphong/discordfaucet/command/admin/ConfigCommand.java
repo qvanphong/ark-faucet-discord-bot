@@ -132,7 +132,7 @@ public class ConfigCommand implements SlashCommand {
                                                     .build()));
 
                         case "reloadtokenconfig":
-                            faucetUtility.readConfig(guildId);
+                            faucetUtility.readTokenConfig(guildId);
                             return event.editReply("Đã cập nhật config mới của token");
 
                     }

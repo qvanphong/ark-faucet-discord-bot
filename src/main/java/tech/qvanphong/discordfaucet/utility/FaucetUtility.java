@@ -28,7 +28,7 @@ public class FaucetUtility {
     }
 
 
-    public void readConfig(long guildId) {
+    public void readTokenConfig(long guildId) {
         String fileExtension = ".token";
         Gson gson = new Gson();
 
@@ -40,7 +40,11 @@ public class FaucetUtility {
                 e.printStackTrace();
             }
         }
+
         File[] tokenSettingFiles = tokenSettingDir.listFiles((dir, name) -> name.endsWith(fileExtension));
+
+        guildTokenConfigs.remove(guildId);
+
         if (tokenSettingFiles != null && tokenSettingFiles.length > 0) {
             for (File tokenSettingFile : tokenSettingFiles) {
                 try {

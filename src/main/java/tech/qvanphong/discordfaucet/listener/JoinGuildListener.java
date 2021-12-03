@@ -27,7 +27,7 @@ public class JoinGuildListener {
                         guildConfigService.createNewGuildConfig(guildId);
                     }
 
-                    this.faucetUtility.readConfig(guildId);
+                    this.faucetUtility.readTokenConfig(guildId);
 
                     return Mono.empty();
                 });
