@@ -2,6 +2,8 @@
 ---
 A Discord bot that giving free ARK token (and any token based ARK).
 
+Note: If you want a bot use separate wallet in every discord guild, check out own_wallet branch 
+
 What this discord bot support:
 - [x] ARK (mainnet, devnet)
 - [x] BIND (devnet, waiting to test mainnet)
