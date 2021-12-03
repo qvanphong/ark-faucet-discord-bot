@@ -12,33 +12,52 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class FaucetUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private FaucetConfig faucetConfig;
+    private Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
 
     @Autowired
-    public FaucetUtility(FaucetConfig faucetConfig) {
+    public FaucetUtility(FaucetConfig faucetConfig, Map<Long, Map<String, TokenConfig>> guildTokenConfigs) {
         this.faucetConfig = faucetConfig;
+        this.guildTokenConfigs = guildTokenConfigs;
     }
 
-    public void readConfig() {
+
+    public void readConfig(long guildId) {
         String fileExtension = ".token";
         Gson gson = new Gson();
 
-        File tokenSettingDir = new File(faucetConfig.getTokenSettingLocation());
-        File[] tokenSettingFiles = tokenSettingDir.listFiles((dir, name) -> name.endsWith(fileExtension));
-        for (File tokenSettingFile : tokenSettingFiles) {
+        File tokenSettingDir = new File(faucetConfig.getTokenSettingLocation() + guildId);
+        if (!tokenSettingDir.exists()) {
             try {
-                String tokenSettingContent = Files.readString(tokenSettingFile.toPath(), StandardCharsets.UTF_8);
-                TokenConfig tokenConfig = gson.fromJson(tokenSettingContent, TokenConfig.class);
-                faucetConfig.getTokens().put(tokenSettingFile.getName().replace(fileExtension, ""), tokenConfig);
-
+                Files.createDirectory(tokenSettingDir.toPath());
             } catch (IOException e) {
                 e.printStackTrace();
-                LOGGER.error(e.getMessage());
             }
         }
+        File[] tokenSettingFiles = tokenSettingDir.listFiles((dir, name) -> name.endsWith(fileExtension));
+        if (tokenSettingFiles != null && tokenSettingFiles.length > 0) {
+            for (File tokenSettingFile : tokenSettingFiles) {
+                try {
+                    Map<String, TokenConfig> guildTokenConfig = guildTokenConfigs.computeIfAbsent(guildId, k -> new HashMap<>());
+
+                    String tokenSettingContent = Files.readString(tokenSettingFile.toPath(), StandardCharsets.UTF_8);
+                    TokenConfig tokenConfigContent = gson.fromJson(tokenSettingContent, TokenConfig.class);
+
+
+                    guildTokenConfig.put(tokenSettingFile.getName().replace(fileExtension, ""), tokenConfigContent);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOGGER.error(e.getMessage());
+                }
+            }
+        }
+
     }
 }

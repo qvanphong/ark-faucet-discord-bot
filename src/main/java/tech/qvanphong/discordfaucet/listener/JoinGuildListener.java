@@ -5,14 +5,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.service.GuildConfigService;
+import tech.qvanphong.discordfaucet.utility.FaucetUtility;
 
 @Component
 public class JoinGuildListener {
     private GuildConfigService guildConfigService;
+    private FaucetUtility faucetUtility;
 
     @Autowired
-    public JoinGuildListener(GuildConfigService guildConfigService) {
+    public JoinGuildListener(GuildConfigService guildConfigService, FaucetUtility faucetUtility) {
         this.guildConfigService = guildConfigService;
+        this.faucetUtility = faucetUtility;
     }
 
     public Mono<Void> handle(GuildCreateEvent event) {
@@ -23,6 +26,8 @@ public class JoinGuildListener {
                     if (guildConfigService.getGuildConfig(guildId) == null) {
                         guildConfigService.createNewGuildConfig(guildId);
                     }
+
+                    this.faucetUtility.readConfig(guildId);
 
                     return Mono.empty();
                 });

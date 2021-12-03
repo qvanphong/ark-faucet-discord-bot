@@ -5,24 +5,10 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 public @Data
 class TokenConfig {
-    /*
-     * Blockchain's restful api url
-     * */
-    @SerializedName("api_url")
-    private String apiUrl;
-
-    /*
-    * Blockchain's restful api url use for backup
-    * */
-    @SerializedName("backup_api_urls")
-    private List<String> backupApiUrls;
-
     /*
      * Blockchain's explorer url
      * */

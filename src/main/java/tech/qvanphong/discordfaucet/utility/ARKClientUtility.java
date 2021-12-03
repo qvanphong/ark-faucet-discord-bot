@@ -9,15 +9,16 @@ import org.arkecosystem.crypto.transactions.builder.TransferBuilder;
 import org.arkecosystem.crypto.transactions.types.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class ARKClientUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private FaucetConfig faucetConfig;
@@ -27,45 +28,44 @@ public class ARKClientUtility {
         this.faucetConfig = faucetConfig;
         this.networkConnection = networkConnections;
     }
+//
+//    public Connection createConnection(String chainName) {
+//        TokenConfig tokenInfo= faucetConfig.getTokenConfigFromChainName(chainName);
+//        if (!tokenInfo.getBackupApiUrls().isEmpty()) {
+//            OkHttpClient okHttpClient = new OkHttpClient();
+//
+//            // Add default api to list. In order to reconnect to default api url
+//            ArrayList<String> apiUrls = new ArrayList<>(tokenInfo.getBackupApiUrls());
+//            apiUrls.add(tokenInfo.getApiUrl());
+//
+//            for (String apiUrl : apiUrls) {
+//                Request request = new Request.Builder().url(apiUrl + "node/configuration").build();
+//                Response response = null;
+//                try {
+//                    response = okHttpClient.newCall(request).execute();
+//                } catch (SocketTimeoutException ignore) {}
+//                catch (IOException e) {
+//                    e.printStackTrace();
+//                    continue;
+//                }
+//
+//                if (response != null && response.isSuccessful()) {
+//                    Map<String, Object> connectionConfig = new HashMap<>();
+//                    connectionConfig.put("host", apiUrl);
+//                    Connection connection = new Connection(connectionConfig);
+//
+//                    return connection;
+//                }
+//            }
+//
+//        }
+//
+//        return null;
+//    }
 
-    public Connection createConnection(String chainName) {
-        TokenConfig tokenInfo= faucetConfig.getTokenConfigFromChainName(chainName);
-        if (!tokenInfo.getBackupApiUrls().isEmpty()) {
-            OkHttpClient okHttpClient = new OkHttpClient();
-
-            // Add default api to list. In order to reconnect to default api url
-            ArrayList<String> apiUrls = new ArrayList<>(tokenInfo.getBackupApiUrls());
-            apiUrls.add(tokenInfo.getApiUrl());
-
-            for (String apiUrl : apiUrls) {
-                Request request = new Request.Builder().url(apiUrl + "node/configuration").build();
-                Response response = null;
-                try {
-                    response = okHttpClient.newCall(request).execute();
-                } catch (SocketTimeoutException ignore) {}
-                catch (IOException e) {
-                    e.printStackTrace();
-                    continue;
-                }
-
-                if (response != null && response.isSuccessful()) {
-                    Map<String, Object> connectionConfig = new HashMap<>();
-                    connectionConfig.put("host", apiUrl);
-                    Connection connection = new Connection(connectionConfig);
-
-                    return connection;
-                }
-            }
-
-        }
-
-        return null;
-    }
-
-    public boolean validateAddress(String address, String chainName) {
-        TokenConfig tokenInfo= this.faucetConfig.getTokenConfigFromChainName(chainName);
+    public boolean validateAddress(String address, TokenConfig tokenConfig) {
         try {
-            return Address.validate(address, tokenInfo.getNetwork());
+            return Address.validate(address, tokenConfig.getNetwork());
         } catch (Exception e) {
             LOGGER.error(e.toString());
             return false;
@@ -79,15 +79,17 @@ public class ARKClientUtility {
                 return connection.api().wallets.show(address);
 
             } catch (SocketTimeoutException e) {
-                Connection recreatedConnection = this.createConnection(chainName);
-                if (recreatedConnection != null) {
-                    networkConnection.replace(chainName, recreatedConnection);
-                    return this.getAddressInfo(address, chainName);
-
-                } else {
-                    LOGGER.error(e.toString());
-                    e.printStackTrace();
-                }
+                LOGGER.error(e.toString());
+                e.printStackTrace();
+//                Connection recreatedConnection = this.createConnection(chainName);
+//                if (recreatedConnection != null) {
+//                    networkConnection.replace(chainName, recreatedConnection);
+//                    return this.getAddressInfo(address, chainName);
+//
+//                } else {
+//                    LOGGER.error(e.toString());
+//                    e.printStackTrace();
+//                }
             } catch (IOException e) {
                 LOGGER.error(e.toString());
                 e.printStackTrace();
@@ -97,8 +99,7 @@ public class ARKClientUtility {
         return null;
     }
 
-    public Transaction createTransaction(FaucetConfig config, String chainName, String recipientAddress, long nonce) {
-        TokenConfig tokenInfo= config.getTokenConfigFromChainName(chainName);
+    public Transaction createTransaction(TokenConfig tokenInfo, String chainName, String recipientAddress, long nonce) {
         if (!tokenInfo.isAslp()) {
             return new TransferBuilder()
                     .network(tokenInfo.getNetwork())

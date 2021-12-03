@@ -11,8 +11,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
+import tech.qvanphong.discordfaucet.config.FaucetConfig;
+import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.listener.JoinGuildListener;
 import tech.qvanphong.discordfaucet.listener.QuitGuildListener;
 import tech.qvanphong.discordfaucet.listener.SlashCommandListener;
@@ -63,14 +64,19 @@ public class ApplicationConfiguration {
     public Map<String, Connection> networkConnection(FaucetConfig faucetConfig) {
         Map<String, Connection> networkConnection = new HashMap<>();
 
-        faucetConfig.getTokens().forEach((chainName, tokenInfo) -> {
+        faucetConfig.getTokenApis().forEach((chainName, apiUrl) -> {
             Map<String, Object> connectionConfig = new HashMap<>();
-            connectionConfig.put("host", tokenInfo.getApiUrl());
+            connectionConfig.put("host", apiUrl);
             Connection connection = new Connection(connectionConfig);
 
             networkConnection.put(chainName, connection);
         });
 
         return networkConnection;
+    }
+
+    @Bean
+    public Map<Long, Map<String, TokenConfig>> guildTokenConfigs() {
+        return new HashMap<>();
     }
 }

@@ -17,15 +17,12 @@ import java.util.Map;
 public @Data
 class FaucetConfig {
 
-    Map<String, TokenConfig> tokens = new HashMap<>();
+    private Map<String, String> tokenApis = new HashMap<>();
 
-    String tokenSettingLocation;
+    private String tokenSettingLocation;
 
-    String aslpApiUrl;
+    private String aslpApiUrl;
 
-    long defaultCoolDownMinutes;
+    private long defaultCoolDownMinutes;
 
-    public TokenConfig getTokenConfigFromChainName(String chainName) {
-        return this.tokens.get(chainName);
-    }
 }

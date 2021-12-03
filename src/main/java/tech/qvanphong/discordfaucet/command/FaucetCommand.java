@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
@@ -18,20 +17,24 @@ import tech.qvanphong.discordfaucet.utility.UserUtility;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class FaucetCommand implements SlashCommand {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private Map<String, Connection> networkConnection;
-    private FaucetConfig faucetConfig;
+    private Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
     private ARKClientUtility arkClientUtility;
     private UserUtility userUtility;
 
     @Autowired
-    public FaucetCommand(Map<String, Connection> networkConnections, FaucetConfig faucetConfig, UserUtility userUtility) {
-        this.networkConnection = networkConnections;
-        this.faucetConfig = faucetConfig;
-        this.arkClientUtility = new ARKClientUtility(faucetConfig, networkConnections);
+    public FaucetCommand(Map<String, Connection> networkConnection,
+                         Map<Long, Map<String, TokenConfig>> guildTokenConfigs,
+                         ARKClientUtility arkClientUtility,
+                         UserUtility userUtility) {
+        this.networkConnection = networkConnection;
+        this.guildTokenConfigs = guildTokenConfigs;
+        this.arkClientUtility = arkClientUtility;
         this.userUtility = userUtility;
     }
 
@@ -43,24 +46,25 @@ public class FaucetCommand implements SlashCommand {
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> handle(ChatInputInteractionEvent event) {
+        Optional<Snowflake> guildIdOptional = event.getInteraction().getGuildId();
+        if (guildIdOptional.isEmpty()) return event.reply("Không lấy được guild id");
+
         String selectedToken = event.getOption("token").get().getValue().get().asString();
         String recipientAddress = event.getOption("address").get().getValue().get().asString();
-
+        long guildId = guildIdOptional.get().asLong();
         Connection connection = networkConnection.get(selectedToken);
-        TokenConfig tokenConfig = faucetConfig.getTokenConfigFromChainName(selectedToken);
+        Map<String, TokenConfig> guildTokenConfig = guildTokenConfigs.get(guildId);
+        TokenConfig tokenConfig = guildTokenConfig == null ? null : guildTokenConfig.get(selectedToken);
+
+
 
         // Check if this network is already config
         if (connection == null || tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty()) {
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
         }
 
-        if (event.getInteraction().getGuildId().isEmpty()) {
-            return event.reply("Không lấy được guild id");
-        }
-
         // get user from database, if not exist, create it.
         long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
-        long guildId = event.getInteraction().getGuildId().get().asLong();
 
         // Begin create transaction and broadcast this transaction
         return event.deferReply()
@@ -70,7 +74,7 @@ public class FaucetCommand implements SlashCommand {
                 // Validate recipient address
                 .then(Mono.just(recipientAddress))
                 .flatMap(recipient -> {
-                    boolean isValidAddress = this.arkClientUtility.validateAddress(recipient, selectedToken);
+                    boolean isValidAddress = this.arkClientUtility.validateAddress(recipient, tokenConfig);
                     return Mono.just(isValidAddress);
                 })
                 .flatMap(isAddressValid -> {
@@ -100,7 +104,7 @@ public class FaucetCommand implements SlashCommand {
                 })
 
                 // Create Transaction
-                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(faucetConfig, selectedToken, recipientAddress, nonce)))
+                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(tokenConfig, selectedToken, recipientAddress, nonce)))
 
                 // Broadcast transaction
                 .flatMap(transaction -> {
