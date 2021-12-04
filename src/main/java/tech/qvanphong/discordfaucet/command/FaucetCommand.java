@@ -109,10 +109,13 @@ public class FaucetCommand implements SlashCommand {
 
                         // update last action for user
                         userUtility.saveUserLatestAction(discordUserId);
+                        // shutdown okhttpclient connection
+                        arkClientUtility.shutdownConnection();
 
                         List<String> acceptedTransactions = (List<String>) ((Map<String, Object>) broadCastedTransaction.get("data")).get("accept");
                         String transactionUrl = tokenConfig.getExplorerUrl() + "transaction/" + acceptedTransactions.get(0);
                         double amount = tokenConfig.isAslp() ? tokenConfig.getAslpReward() : tokenConfig.getRewardAmount() / 100000000D;
+
 
                         return event.editReply(String.format("Đã chuyển **%.1f %s** đến địa chỉ *%s*\ntx: %s",
                                 amount,
@@ -125,35 +128,38 @@ public class FaucetCommand implements SlashCommand {
                     LOGGER.error(broadCastedTransaction != null ? broadCastedTransaction.toString() : "broadCastedTransaction null");
                     return Mono.error(new Throwable("Có lỗi khi thực hiện giao dịch", new Throwable("transaction: " + broadCastedTransaction)));
                 })
-                .onErrorResume(throwable -> event.editReply(throwable.getMessage())
-                        .then(event.getClient()
-                                .getUserById(Snowflake.of(userUtility.getBotOwnerUserId()))
-                                .flatMap(User::getPrivateChannel)
-                                .flatMap(privateChannel -> {
-                                    String time = LocalDateTime.now().toString();
-                                    String commandName = event.getCommandName();
-                                    String userUsedCommand = event.getInteraction().getUser().getUsername();
-                                    String userIdUsedCommand = event.getInteraction().getUser().getUserData().id().asString();
+                .onErrorResume(throwable -> {
+                        arkClientUtility.shutdownConnection();
+                        return event.editReply(throwable.getMessage())
+                                .then(event.getClient()
+                                        .getUserById(Snowflake.of(userUtility.getBotOwnerUserId()))
+                                        .flatMap(User::getPrivateChannel)
+                                        .flatMap(privateChannel -> {
+                                            String time = LocalDateTime.now().toString();
+                                            String commandName = event.getCommandName();
+                                            String userUsedCommand = event.getInteraction().getUser().getUsername();
+                                            String userIdUsedCommand = event.getInteraction().getUser().getUserData().id().asString();
 
-                                    if (throwable.getCause() != null) {
-                                        return event.getInteraction()
-                                                .getGuild()
-                                                .map(Guild::getName)
-                                                .flatMap(guildName -> privateChannel
-                                                        .createMessage(String.format("```Time: %s\nGuild: %s\nUser: %s (%s)\nCommand: %s\nError:\n%s```",
-                                                                time,
-                                                                guildName,
-                                                                userUsedCommand,
-                                                                userIdUsedCommand,
-                                                                commandName,
-                                                                throwable.getCause().getMessage()))
-                                                        .onErrorResume(ignore -> Mono.empty()));
-                                    } else {
-                                        return Mono.empty();
-                                    }
-                                })
-                                .then()
-                        ));
+                                            if (throwable.getCause() != null) {
+                                                return event.getInteraction()
+                                                        .getGuild()
+                                                        .map(Guild::getName)
+                                                        .flatMap(guildName -> privateChannel
+                                                                .createMessage(String.format("```Time: %s\nGuild: %s\nUser: %s (%s)\nCommand: %s\nError:\n%s```",
+                                                                        time,
+                                                                        guildName,
+                                                                        userUsedCommand,
+                                                                        userIdUsedCommand,
+                                                                        commandName,
+                                                                        throwable.getCause().getMessage()))
+                                                                .onErrorResume(ignore -> Mono.empty()));
+                                            } else {
+                                                return Mono.empty();
+                                            }
+                                        })
+                                        .then()
+                                );
+                        });
 
     }
 

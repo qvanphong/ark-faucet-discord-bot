@@ -4,7 +4,7 @@ A Discord bot that giving free ARK token (and any token based ARK). With own wal
 
 What this discord bot support:
 - [x] ARK (mainnet, devnet)
-- [x] BIND (devnet, waiting to test mainnet)
+- [x] BIND (mainnet, devnet)
 - [x] bARK
 - [ ] Qredit
 

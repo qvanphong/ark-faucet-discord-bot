@@ -18,10 +18,15 @@ import java.util.Map;
 
 public class ARKClientUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
-    private TokenConfig tokenConfig;
+    private final TokenConfig tokenConfig;
+    private final Connection connection;
+    private boolean isConnectionClosed = false;
 
     public ARKClientUtility(TokenConfig tokenConfig) {
         this.tokenConfig = tokenConfig;
+        Map<String, Object> connectionConfig = new HashMap<>();
+        connectionConfig.put("host", tokenConfig.getApiUrl());
+        connection = new Connection(connectionConfig);
     }
 
     //
@@ -69,10 +74,6 @@ public class ARKClientUtility {
     }
 
     public Map<String, Object> getAddressInfo(String address) {
-        Map<String, Object> connectionConfig = new HashMap<>();
-        connectionConfig.put("host", tokenConfig.getApiUrl());
-        Connection connection = new Connection(connectionConfig);
-
         try {
             return connection.api().wallets.show(address);
 
@@ -105,7 +106,8 @@ public class ARKClientUtility {
                     .sign(tokenConfig.getPassphrase())
                     .transaction;
         } else {
-            OkHttpClient okHttpClient = new OkHttpClient();
+
+            OkHttpClient okHttpClient = connection.client().getClient();
             try {
                 Request request = new Request.Builder()
                         .url(tokenConfig.getAslpApiUrl() + "vendor_aslp1_send?tokenid=8259ce077b1e767227e5e0fce590d26d&quantity=" + tokenConfig.getAslpReward() + "&notes=" + tokenConfig.getVendorField())
@@ -135,10 +137,6 @@ public class ARKClientUtility {
     }
 
     public Map<String, Object> broadcastTransaction(Transaction transaction) {
-        Map<String, Object> connectionConfig = new HashMap<>();
-        connectionConfig.put("host", tokenConfig.getApiUrl());
-        Connection connection = new Connection(connectionConfig);
-
         ArrayList<Map<String, ?>> transactionPayload = new ArrayList<>();
         transactionPayload.add(transaction.toHashMap());
 
@@ -150,5 +148,13 @@ public class ARKClientUtility {
         }
 
         return null;
+    }
+
+    public void shutdownConnection() {
+        if (!isConnectionClosed) {
+            connection.client().getClient().dispatcher().executorService().shutdown();
+            connection.client().getClient().connectionPool().evictAll();;
+            isConnectionClosed = true;
+        }
     }
 }
