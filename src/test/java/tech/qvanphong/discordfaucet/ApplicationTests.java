@@ -59,6 +59,7 @@ class ApplicationTests {
 
     @Test
     void getWIFFromPrivateTest() {
+
         try {
             String wif = WIF.fromPassphrase(senderPrivateKey);
             System.out.println(wif);

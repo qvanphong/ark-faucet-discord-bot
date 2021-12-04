@@ -9,8 +9,6 @@ import org.arkecosystem.crypto.transactions.builder.TransferBuilder;
 import org.arkecosystem.crypto.transactions.types.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 
 import java.io.IOException;
@@ -18,24 +16,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
 public class ARKClientUtility {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
-    private FaucetConfig faucetConfig;
+    private TokenConfig tokenConfig;
 
-
-    public ARKClientUtility(FaucetConfig faucetConfig) {
-        this.faucetConfig = faucetConfig;
+    public ARKClientUtility(TokenConfig tokenConfig) {
+        this.tokenConfig = tokenConfig;
     }
-//
+
+    //
 //    public Connection createConnection(String chainName) {
-//        TokenConfig tokenInfo= faucetConfig.getTokenConfigFromChainName(chainName);
-//        if (!tokenInfo.getBackupApiUrls().isEmpty()) {
+//        TokenConfig tokenConfig= faucetConfig.getTokenConfigFromChainName(chainName);
+//        if (!tokenConfig.getBackupApiUrls().isEmpty()) {
 //            OkHttpClient okHttpClient = new OkHttpClient();
 //
 //            // Add default api to list. In order to reconnect to default api url
-//            ArrayList<String> apiUrls = new ArrayList<>(tokenInfo.getBackupApiUrls());
-//            apiUrls.add(tokenInfo.getApiUrl());
+//            ArrayList<String> apiUrls = new ArrayList<>(tokenConfig.getBackupApiUrls());
+//            apiUrls.add(tokenConfig.getApiUrl());
 //
 //            for (String apiUrl : apiUrls) {
 //                Request request = new Request.Builder().url(apiUrl + "node/configuration").build();
@@ -71,9 +68,9 @@ public class ARKClientUtility {
         }
     }
 
-    public Map<String, Object> getAddressInfo(String address, String chainName) {
+    public Map<String, Object> getAddressInfo(String address) {
         Map<String, Object> connectionConfig = new HashMap<>();
-        connectionConfig.put("host", faucetConfig.getTokenApis().get(chainName));
+        connectionConfig.put("host", tokenConfig.getApiUrl());
         Connection connection = new Connection(connectionConfig);
 
         try {
@@ -96,34 +93,34 @@ public class ARKClientUtility {
         return null;
     }
 
-    public Transaction createTransaction(TokenConfig tokenInfo, String recipientAddress, long nonce) {
-        if (!tokenInfo.isAslp()) {
+    public Transaction createTransaction(String recipientAddress, long nonce) {
+        if (!tokenConfig.isAslp()) {
             return new TransferBuilder()
-                    .network(tokenInfo.getNetwork())
+                    .network(tokenConfig.getNetwork())
                     .recipient(recipientAddress)
-                    .amount(tokenInfo.getRewardAmount())
-                    .vendorField(tokenInfo.isAllowVendorField() ? tokenInfo.getVendorField() : null)
-                    .fee(tokenInfo.getFee())
+                    .amount(tokenConfig.getRewardAmount())
+                    .vendorField(tokenConfig.isAllowVendorField() ? tokenConfig.getVendorField() : null)
+                    .fee(tokenConfig.getFee())
                     .nonce(nonce + 1)
-                    .sign(tokenInfo.getPassphrase())
+                    .sign(tokenConfig.getPassphrase())
                     .transaction;
         } else {
             OkHttpClient okHttpClient = new OkHttpClient();
             try {
                 Request request = new Request.Builder()
-                        .url(tokenInfo.getAslpApiUrl() + "vendor_aslp1_send?tokenid=8259ce077b1e767227e5e0fce590d26d&quantity=" + tokenInfo.getAslpReward() + "&notes=" + tokenInfo.getVendorField())
+                        .url(tokenConfig.getAslpApiUrl() + "vendor_aslp1_send?tokenid=8259ce077b1e767227e5e0fce590d26d&quantity=" + tokenConfig.getAslpReward() + "&notes=" + tokenConfig.getVendorField())
                         .build();
                 Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful()) {
                     String vendorField = response.body().string();
                     Transaction transaction = new TransferBuilder()
-                            .network(tokenInfo.getNetwork())
+                            .network(tokenConfig.getNetwork())
                             .recipient(recipientAddress)
-                            .amount(tokenInfo.getRewardAmount())
+                            .amount(tokenConfig.getRewardAmount())
                             .vendorField(vendorField)
-                            .fee(tokenInfo.getFee())
+                            .fee(tokenConfig.getFee())
                             .nonce(nonce + 1)
-                            .sign(tokenInfo.getPassphrase())
+                            .sign(tokenConfig.getPassphrase())
                             .transaction;
                     return transaction;
                 }
@@ -137,21 +134,19 @@ public class ARKClientUtility {
         }
     }
 
-    public Map<String, Object> broadcastTransaction(Transaction transaction, String chainName) {
+    public Map<String, Object> broadcastTransaction(Transaction transaction) {
         Map<String, Object> connectionConfig = new HashMap<>();
-        connectionConfig.put("host", faucetConfig.getTokenApis().get(chainName));
+        connectionConfig.put("host", tokenConfig.getApiUrl());
         Connection connection = new Connection(connectionConfig);
 
-        if (connection != null) {
-            ArrayList<Map<String, ?>> transactionPayload = new ArrayList<>();
-            transactionPayload.add(transaction.toHashMap());
+        ArrayList<Map<String, ?>> transactionPayload = new ArrayList<>();
+        transactionPayload.add(transaction.toHashMap());
 
-            try {
-                return connection.api().transactions.create(transactionPayload);
-            } catch (IOException e) {
-                LOGGER.error(e.toString());
-                e.printStackTrace();
-            }
+        try {
+            return connection.api().transactions.create(transactionPayload);
+        } catch (IOException e) {
+            LOGGER.error(e.toString());
+            e.printStackTrace();
         }
 
         return null;

@@ -16,13 +16,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class FaucetUtility {
+public class TokenConfigReader {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     private FaucetConfig faucetConfig;
     private Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
 
     @Autowired
-    public FaucetUtility(FaucetConfig faucetConfig, Map<Long, Map<String, TokenConfig>> guildTokenConfigs) {
+    public TokenConfigReader(FaucetConfig faucetConfig, Map<Long, Map<String, TokenConfig>> guildTokenConfigs) {
         this.faucetConfig = faucetConfig;
         this.guildTokenConfigs = guildTokenConfigs;
     }

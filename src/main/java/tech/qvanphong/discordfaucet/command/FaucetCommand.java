@@ -2,6 +2,7 @@ package tech.qvanphong.discordfaucet.command;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.utility.ARKClientUtility;
+import tech.qvanphong.discordfaucet.utility.GuildTokenConfigUtility;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import java.time.LocalDateTime;
@@ -21,16 +23,13 @@ import java.util.Optional;
 @Component
 public class FaucetCommand implements SlashCommand {
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
-    private Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
-    private ARKClientUtility arkClientUtility;
-    private UserUtility userUtility;
+    private final GuildTokenConfigUtility guildTokenConfigUtility;
+    private final UserUtility userUtility;
 
     @Autowired
-    public FaucetCommand(Map<Long, Map<String, TokenConfig>> guildTokenConfigs,
-                         ARKClientUtility arkClientUtility,
+    public FaucetCommand(GuildTokenConfigUtility guildTokenConfigUtility,
                          UserUtility userUtility) {
-        this.guildTokenConfigs = guildTokenConfigs;
-        this.arkClientUtility = arkClientUtility;
+        this.guildTokenConfigUtility = guildTokenConfigUtility;
         this.userUtility = userUtility;
     }
 
@@ -43,20 +42,19 @@ public class FaucetCommand implements SlashCommand {
     @Override
     public Mono<Void> handle(ChatInputInteractionEvent event) {
         Optional<Snowflake> guildIdOptional = event.getInteraction().getGuildId();
-        if (guildIdOptional.isEmpty()) return event.reply("Không lấy được guild id");
+        if (guildIdOptional.isEmpty())
+            return event.reply("Không lấy được guild id");
 
         long guildId = guildIdOptional.get().asLong();
-        String selectedToken = event.getOption("token").get().getValue().get().asString();
-        String recipientAddress = event.getOption("address").get().getValue().get().asString();
-        Map<String, TokenConfig> guildTokenConfig = guildTokenConfigs.get(guildId);
-        TokenConfig tokenConfig = guildTokenConfig == null ? null : guildTokenConfig.get(selectedToken);
+        String selectedToken = event.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        TokenConfig tokenConfig = guildTokenConfigUtility.getTokenConfig(guildId, selectedToken);
 
         // Check if this network is already config
-        if (tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty()) {
+        if (tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty())
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
-        }
 
-        // get user from database, if not exist, create it.
+        String recipientAddress = event.getOption("address").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        ARKClientUtility arkClientUtility = new ARKClientUtility(tokenConfig);
         long discordUserId = event.getInteraction().getUser().getUserData().id().asLong();
 
         // Begin create transaction and broadcast this transaction
@@ -66,19 +64,13 @@ public class FaucetCommand implements SlashCommand {
                 .flatMap(errorMessage -> errorMessage.isEmpty() ? Mono.empty() : Mono.error(new Throwable(errorMessage)))
                 // Validate recipient address
                 .then(Mono.just(recipientAddress))
-                .flatMap(recipient -> {
-                    boolean isValidAddress = this.arkClientUtility.validateAddress(recipient, tokenConfig);
-                    return Mono.just(isValidAddress);
-                })
-                .flatMap(isAddressValid -> {
-                    if (!isAddressValid) {
-                        return Mono.error(new Throwable("Địa chỉ ví nhập vào không hợp lệ, hãy kiểm tra lại chắc chắn bạn đã nhập đúng ví " + selectedToken.toUpperCase()));
-                    }
-                    return Mono.just(tokenConfig.getSenderAddress());
-                })
+                .map(recipient -> arkClientUtility.validateAddress(recipient, tokenConfig))
+                .flatMap(isAddressValid -> !isAddressValid ?
+                        Mono.error(new Throwable("Địa chỉ ví nhập vào không hợp lệ, hãy kiểm tra lại chắc chắn bạn đã nhập đúng ví " + selectedToken.toUpperCase())) :
+                        Mono.just(tokenConfig.getSenderAddress()))
 
                 // Get sender nonce
-                .map(senderAddress -> arkClientUtility.getAddressInfo(senderAddress, selectedToken))
+                .map(arkClientUtility::getAddressInfo)
                 .flatMap(walletInfo -> {
                     if (walletInfo == null || !walletInfo.containsKey("data")) {
                         LOGGER.error(walletInfo != null ? walletInfo.toString() : null);
@@ -97,13 +89,12 @@ public class FaucetCommand implements SlashCommand {
                 })
 
                 // Create Transaction
-                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(tokenConfig, recipientAddress, nonce)))
+                .flatMap(nonce -> Mono.just(arkClientUtility.createTransaction(recipientAddress, nonce)))
 
                 // Broadcast transaction
                 .flatMap(transaction -> {
                     if (transaction != null)
-                        return Mono.just(arkClientUtility.broadcastTransaction(transaction, selectedToken));
-
+                        return Mono.just(arkClientUtility.broadcastTransaction(transaction));
                     return Mono.error(new Throwable("Có lỗi khi thực hiện giao dịch", new Throwable("Không tạo được transaction")));
                 })
                 // Response transaction status

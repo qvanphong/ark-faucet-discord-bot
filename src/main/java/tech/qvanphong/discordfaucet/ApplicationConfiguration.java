@@ -22,11 +22,6 @@ import java.util.Map;
 @Configuration
 public class ApplicationConfiguration {
     @Bean
-    public BlockchainInfoPostProcessor blockchainInfoPostProcessor() {
-        return new BlockchainInfoPostProcessor();
-    }
-
-    @Bean
     public RestClient restClient(DiscordBotConfig botConfig) {
         return RestClient.create(botConfig.getToken());
     }

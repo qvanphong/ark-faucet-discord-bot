@@ -5,17 +5,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.service.GuildConfigService;
-import tech.qvanphong.discordfaucet.utility.FaucetUtility;
+import tech.qvanphong.discordfaucet.utility.TokenConfigReader;
 
 @Component
 public class JoinGuildListener {
     private GuildConfigService guildConfigService;
-    private FaucetUtility faucetUtility;
+    private TokenConfigReader tokenConfigReader;
 
     @Autowired
-    public JoinGuildListener(GuildConfigService guildConfigService, FaucetUtility faucetUtility) {
+    public JoinGuildListener(GuildConfigService guildConfigService, TokenConfigReader tokenConfigReader) {
         this.guildConfigService = guildConfigService;
-        this.faucetUtility = faucetUtility;
+        this.tokenConfigReader = tokenConfigReader;
     }
 
     public Mono<Void> handle(GuildCreateEvent event) {
@@ -27,7 +27,7 @@ public class JoinGuildListener {
                         guildConfigService.createNewGuildConfig(guildId);
                     }
 
-                    this.faucetUtility.readTokenConfig(guildId);
+                    this.tokenConfigReader.readTokenConfig(guildId);
 
                     return Mono.empty();
                 });

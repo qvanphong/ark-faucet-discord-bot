@@ -11,7 +11,7 @@ import tech.qvanphong.discordfaucet.command.SlashCommand;
 import tech.qvanphong.discordfaucet.entity.AllowedRole;
 import tech.qvanphong.discordfaucet.entity.Guild;
 import tech.qvanphong.discordfaucet.service.GuildConfigService;
-import tech.qvanphong.discordfaucet.utility.FaucetUtility;
+import tech.qvanphong.discordfaucet.utility.TokenConfigReader;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import java.util.List;
@@ -20,13 +20,13 @@ import java.util.List;
 public class ConfigCommand implements SlashCommand {
     private GuildConfigService guildConfigService;
     private UserUtility userUtility;
-    private FaucetUtility faucetUtility;
+    private TokenConfigReader tokenConfigReader;
 
     @Autowired
-    public ConfigCommand(GuildConfigService guildConfigService, UserUtility userUtility, FaucetUtility faucetUtility) {
+    public ConfigCommand(GuildConfigService guildConfigService, UserUtility userUtility, TokenConfigReader tokenConfigReader) {
         this.guildConfigService = guildConfigService;
         this.userUtility = userUtility;
-        this.faucetUtility = faucetUtility;
+        this.tokenConfigReader = tokenConfigReader;
     }
 
     @Override
@@ -132,7 +132,7 @@ public class ConfigCommand implements SlashCommand {
                                                     .build()));
 
                         case "reloadtokenconfig":
-                            faucetUtility.readTokenConfig(guildId);
+                            tokenConfigReader.readTokenConfig(guildId);
                             return event.editReply("Đã cập nhật config mới của token");
 
                     }

@@ -12,6 +12,12 @@ class TokenConfig {
     /*
      * Blockchain's explorer url
      * */
+    @SerializedName("api_url")
+    private String apiUrl;
+
+    /*
+     * Blockchain's explorer url
+     * */
     @SerializedName("explorer_url")
     private String explorerUrl;
 
