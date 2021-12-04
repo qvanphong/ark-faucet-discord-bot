@@ -6,7 +6,7 @@ Note: If you want a bot use separate wallet in every discord guild, check out ow
 
 What this discord bot support:
 - [x] ARK (mainnet, devnet)
-- [x] BIND (devnet, waiting to test mainnet)
+- [x] BIND (mainnet, devnet)
 - [x] bARK
 - [ ] Qredit
 
