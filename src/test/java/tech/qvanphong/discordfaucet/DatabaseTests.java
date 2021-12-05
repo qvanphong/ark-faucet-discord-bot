@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.*;
 import tech.qvanphong.discordfaucet.repository.AllowedRolesRepository;
 import tech.qvanphong.discordfaucet.service.*;
@@ -218,4 +219,41 @@ public class DatabaseTests {
     }
 
 
+    @Test
+    public void createTokenConfig_shouldNotCreateTwiceIfHaveSameNameAndGuildId(@Autowired TokenConfigService tokenConfigService) {
+        int guildId = 1;
+
+        TokenConfig tokenConfig = new TokenConfig();
+        tokenConfig.setName("ark");
+        tokenConfig.setGuildId(guildId);
+        tokenConfig.setApiUrl("");
+        tokenConfig.setExplorerUrl("");
+        tokenConfig.setFee(8);
+        tokenConfig.setRewardAmount(1);
+        tokenConfig.setPassphrase("first pass");
+        tokenConfig.setSenderAddress("sender");
+        tokenConfig.setTokenSymbol("ark");
+
+        tokenConfigService.saveTokenConfig(tokenConfig);
+        int firstSaveSize = tokenConfigService.getTokenConfigs(guildId).size();
+
+        TokenConfig tokenConfig2 = new TokenConfig();
+        tokenConfig2.setName("ark");
+        tokenConfig2.setGuildId(guildId);
+        tokenConfig2.setApiUrl("");
+        tokenConfig2.setExplorerUrl("");
+        tokenConfig2.setFee(8);
+        tokenConfig2.setRewardAmount(1);
+        tokenConfig2.setPassphrase("secondPass");
+        tokenConfig2.setSenderAddress("sender");
+        tokenConfig2.setTokenSymbol("ark");
+
+        tokenConfigService.saveTokenConfig(tokenConfig2);
+
+        List<TokenConfig> tokenConfigs = tokenConfigService.getTokenConfigs(guildId);
+        int secondSaveSize = tokenConfigs.size();
+
+        System.out.println(tokenConfigs);
+        assert firstSaveSize == 1 && secondSaveSize == 1;
+    }
 }

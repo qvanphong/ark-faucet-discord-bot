@@ -9,7 +9,6 @@ import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.utility.GuildTokenConfigUtility;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -35,16 +34,13 @@ public class DonateCommand implements SlashCommand {
                 .title("ARK Faucet Bot Address:")
                 .footer("Cảm ơn sự đóng góp của bạn \uD83D\uDE04", null);
 
-        for (Map.Entry<String, TokenConfig> entry : guildTokenConfigUtility.getGuildTokenConfigs(guildId).entrySet()) {
-            String tokenName = entry.getKey();
-            TokenConfig tokenConfig = entry.getValue();
-            if (tokenConfig != null && tokenConfig.getSenderAddress() != null && !tokenConfig.getSenderAddress().isBlank()) {
-                embedBuilder.addField(tokenName.toUpperCase(), "Address", true)
+        for (TokenConfig tokenConfig : guildTokenConfigUtility.getTokenConfigs(guildId)) {
+            if (tokenConfig.getSenderAddress() != null && !tokenConfig.getSenderAddress().isBlank()) {
+                embedBuilder.addField(tokenConfig.getName().toUpperCase(), "Address", true)
                         .addField("\u200B", tokenConfig.getSenderAddress(), true)
                         .addField("\u200B", "\u200B", true);
             }
         }
-
 
         return event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .addEmbed(embedBuilder.build())

@@ -1,26 +1,27 @@
 package tech.qvanphong.discordfaucet.utility;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.qvanphong.discordfaucet.config.TokenConfig;
+import tech.qvanphong.discordfaucet.service.TokenConfigService;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Component
 public class GuildTokenConfigUtility {
-    private final Map<Long, Map<String, TokenConfig>> guildTokenConfigs;
+    private final TokenConfigService tokenConfigService;
 
-    public GuildTokenConfigUtility(Map<Long, Map<String, TokenConfig>> guildTokenConfigs) {
-        this.guildTokenConfigs = guildTokenConfigs;
+    @Autowired
+    public GuildTokenConfigUtility(TokenConfigService tokenConfigService) {
+        this.tokenConfigService = tokenConfigService;
     }
 
-    public Map<String, TokenConfig> getGuildTokenConfigs(long guildId) {
-        return this.guildTokenConfigs.computeIfAbsent(guildId, unused -> new HashMap<>());
+    public List<TokenConfig> getTokenConfigs(long guildId) {
+        return this.tokenConfigService.getTokenConfigs(guildId);
     }
 
     public TokenConfig getTokenConfig(long guildId, String tokenName) {
-        Map<String, TokenConfig> guildTokenConfigs = getGuildTokenConfigs(guildId);
-        return guildTokenConfigs.get(tokenName);
+        return tokenConfigService.getTokenConfig(guildId, tokenName);
     }
 
 

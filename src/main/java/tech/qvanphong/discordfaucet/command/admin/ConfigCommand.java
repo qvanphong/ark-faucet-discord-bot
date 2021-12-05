@@ -1,17 +1,23 @@
 package tech.qvanphong.discordfaucet.command.admin;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionReplyEditSpec;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tech.qvanphong.discordfaucet.command.SlashCommand;
+import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.entity.AllowedRole;
 import tech.qvanphong.discordfaucet.entity.Guild;
 import tech.qvanphong.discordfaucet.service.GuildConfigService;
-import tech.qvanphong.discordfaucet.utility.TokenConfigReader;
+import tech.qvanphong.discordfaucet.service.TokenConfigService;
 import tech.qvanphong.discordfaucet.utility.UserUtility;
 
 import java.util.List;
@@ -19,14 +25,26 @@ import java.util.List;
 @Component
 public class ConfigCommand implements SlashCommand {
     private GuildConfigService guildConfigService;
+    private TokenConfigService tokenConfigService;
     private UserUtility userUtility;
-    private TokenConfigReader tokenConfigReader;
+    private ExclusionStrategy passphraseExclusionStrategy;
 
     @Autowired
-    public ConfigCommand(GuildConfigService guildConfigService, UserUtility userUtility, TokenConfigReader tokenConfigReader) {
+    public ConfigCommand(GuildConfigService guildConfigService, TokenConfigService tokenConfigService, UserUtility userUtility) {
         this.guildConfigService = guildConfigService;
+        this.tokenConfigService = tokenConfigService;
         this.userUtility = userUtility;
-        this.tokenConfigReader = tokenConfigReader;
+        this.passphraseExclusionStrategy = new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes f) {
+                return f.getDeclaredClass().equals(TokenConfig.class) && f.getName().equals("passphrase");
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        };
     }
 
     @Override
@@ -79,12 +97,13 @@ public class ConfigCommand implements SlashCommand {
                                         allowedRole.setRoleId(roleId);
                                         allowedRole.setGuild(guildConfig);
 
-                                        if (allowedRoles.contains(allowedRole)) return event.editReply("Role này đã tồn tại trong danh sách cho phép");
+                                        if (allowedRoles.contains(allowedRole))
+                                            return event.editReply("Role này đã tồn tại trong danh sách cho phép");
 
                                         allowedRoles.add(allowedRole);
                                         guildConfigService.saveGuildConfig(guildConfig);
 
-                                        return event.editReply("Đã thêm role " + role.getName() +  " vào danh sách cho phép sử dụng lệnh /faucet");
+                                        return event.editReply("Đã thêm role " + role.getName() + " vào danh sách cho phép sử dụng lệnh /faucet");
                                     });
 
 
@@ -103,7 +122,8 @@ public class ConfigCommand implements SlashCommand {
                                     });
 
                         case "listallowroles":
-                            if (guildConfig.isAllRoleAllowed()) return event.editReply("Không chỉ định role do bot thiết lập cho phép toàn bộ người dùng có thể dùng.");
+                            if (guildConfig.isAllRoleAllowed())
+                                return event.editReply("Không chỉ định role do bot thiết lập cho phép toàn bộ người dùng có thể dùng.");
                             StringBuilder roleListMessage = new StringBuilder();
 
                             for (AllowedRole allowedRole : allowedRoles) {
@@ -131,14 +151,45 @@ public class ConfigCommand implements SlashCommand {
                                                             .build())
                                                     .build()));
 
-                        case "reloadtokenconfig":
-                            tokenConfigReader.readTokenConfig(guildId);
-                            return event.editReply("Đã cập nhật config mới của token");
+                        case "editconfig":
+                            String json = subCommandInteractionOption.getOption("json").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+                            TokenConfig tokenConfig = new Gson().fromJson(json, TokenConfig.class);
+                            tokenConfig.setGuildId(guildId);
 
+                            if (validateTokenConfig(tokenConfig)) {
+                                tokenConfigService.saveTokenConfig(tokenConfig);
+                                return event.editReply("Đã cập nhật config mới của token");
+                            } else {
+                                return Mono.error(new Throwable("JSON chưa đúng định dạng."));
+                            }
+
+                        case "readconfig":
+                            String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+                            TokenConfig selectedTokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
+
+                            if (selectedTokenConfig == null) return Mono.error(new Throwable("Token " + tokenName.toUpperCase() + " chưa được thiết lập"));
+                            String jsonContent = new GsonBuilder().addSerializationExclusionStrategy(passphraseExclusionStrategy).create().toJson(selectedTokenConfig);
+
+                            return event.editReply("```\n" + jsonContent + "```");
                     }
                     return Mono.empty();
                 })
                 .onErrorResume(throwable -> event.editReply(throwable.getMessage()))
                 .then();
     }
+
+    private boolean validateTokenConfig(TokenConfig tokenConfig) {
+        return tokenConfig != null &&
+                !StringUtils.isAnyEmpty(tokenConfig.getName(),
+                        tokenConfig.getApiUrl(),
+                        tokenConfig.getExplorerUrl(),
+                        tokenConfig.getTokenSymbol(),
+                        tokenConfig.getSenderAddress(),
+                        tokenConfig.getPassphrase()) &&
+                tokenConfig.getFee() != 0 &&
+                tokenConfig.getRewardAmount() != 0 &&
+                tokenConfig.getNetwork() != 0 &&
+                (!tokenConfig.isAslp() || tokenConfig.getAslpReward() != 0);
+    }
+
 }

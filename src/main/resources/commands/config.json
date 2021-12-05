@@ -65,9 +65,44 @@
       "type": 1
     },
     {
-      "name": "reloadtokenconfig",
-      "description": "Đọc lại các config của token",
-      "type": 1
+      "name": "editconfig",
+      "description": "Thiết lập lại config của token",
+      "type": 1,
+      "options": [
+        {
+          "name": "json",
+          "description": "JSON config",
+          "type": 3,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "readconfig",
+      "description": "Hiển thị config hiện tại của token",
+      "type": 1,
+      "options": [
+        {
+          "name": "token",
+          "description": "Chọn token",
+          "type": 3,
+          "required": true,
+          "choices": [
+            {
+              "name": "ARK",
+              "value": "ark"
+            },
+            {
+              "name": "BIND",
+              "value": "bind"
+            },
+            {
+              "name": "bARK",
+              "value": "bark"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
