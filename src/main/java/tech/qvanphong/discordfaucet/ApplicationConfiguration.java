@@ -6,13 +6,12 @@ import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.guild.GuildDeleteEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.rest.RestClient;
-import org.arkecosystem.client.Connection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.qvanphong.discordfaucet.config.FaucetConfig;
 import tech.qvanphong.discordfaucet.config.DiscordBotConfig;
+import tech.qvanphong.discordfaucet.config.TokenConfig;
 import tech.qvanphong.discordfaucet.listener.JoinGuildListener;
 import tech.qvanphong.discordfaucet.listener.QuitGuildListener;
 import tech.qvanphong.discordfaucet.listener.SlashCommandListener;
@@ -22,11 +21,6 @@ import java.util.Map;
 
 @Configuration
 public class ApplicationConfiguration {
-    @Bean
-    public BlockchainInfoPostProcessor blockchainInfoPostProcessor() {
-        return new BlockchainInfoPostProcessor();
-    }
-
     @Bean
     public RestClient restClient(DiscordBotConfig botConfig) {
         return RestClient.create(botConfig.getToken());
@@ -60,17 +54,7 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    public Map<String, Connection> networkConnection(FaucetConfig faucetConfig) {
-        Map<String, Connection> networkConnection = new HashMap<>();
-
-        faucetConfig.getTokens().forEach((chainName, tokenInfo) -> {
-            Map<String, Object> connectionConfig = new HashMap<>();
-            connectionConfig.put("host", tokenInfo.getApiUrl());
-            Connection connection = new Connection(connectionConfig);
-
-            networkConnection.put(chainName, connection);
-        });
-
-        return networkConnection;
+    public Map<Long, Map<String, TokenConfig>> guildTokenConfigs() {
+        return new HashMap<>();
     }
 }

@@ -7,9 +7,6 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Scope;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @ConfigurationProperties("faucet")
 @Getter
 @Setter
@@ -17,15 +14,10 @@ import java.util.Map;
 public @Data
 class FaucetConfig {
 
-    Map<String, TokenConfig> tokens = new HashMap<>();
+    private String tokenSettingLocation;
 
-    String tokenSettingLocation;
+    private String aslpApiUrl;
 
-    String aslpApiUrl;
+    private long defaultCoolDownMinutes;
 
-    long defaultCoolDownMinutes;
-
-    public TokenConfig getTokenConfigFromChainName(String chainName) {
-        return this.tokens.get(chainName);
-    }
 }

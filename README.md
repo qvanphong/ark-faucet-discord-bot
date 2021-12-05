@@ -1,6 +1,6 @@
 # **ARK Faucet Discord bot**
 ---
-A Discord bot that giving free ARK token (and any token based ARK).
+A Discord bot that giving free ARK token (and any token based ARK). With own wallet for every guild.
 
 Note: If you want a bot use separate wallet in every discord guild, check out own_wallet branch 
 
@@ -40,7 +40,8 @@ faucet.default-cool-down-minutes=180
 
 
 ## Token profile setting
-- Create [token_symbol].token file following the that you setup in `faucet.token-setting-location` in `application.properties`
+- Create [token_symbol].token file following the that you setup in `faucet.token-setting-location` in `application.properties`/[guild_id]/
+
 (token_symbol must match `value` value in `src\main\resources\commands\faucet.json`, for example: I setting up 3 token in faucet.json, these are ark, bind, bark (following their `value` key), the token profile file must be named ark.token, bind.token, bark.token)
 - the json structure following `TokenConfig.java` structure
 ```

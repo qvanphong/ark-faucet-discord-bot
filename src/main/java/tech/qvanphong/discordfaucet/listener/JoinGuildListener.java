@@ -18,11 +18,13 @@ public class JoinGuildListener {
     public Mono<Void> handle(GuildCreateEvent event) {
         return Mono.just(event)
                 .flatMap(guildCreateEvent -> {
-                    long guildId = guildCreateEvent.getGuild().getId().asLong();
                     System.out.println("Joined guild " + guildCreateEvent.getGuild().getName());
+                    long guildId = guildCreateEvent.getGuild().getId().asLong();
                     if (guildConfigService.getGuildConfig(guildId) == null) {
                         guildConfigService.createNewGuildConfig(guildId);
                     }
+
+//                    this.tokenConfigReader.readTokenConfig(guildId);
 
                     return Mono.empty();
                 });

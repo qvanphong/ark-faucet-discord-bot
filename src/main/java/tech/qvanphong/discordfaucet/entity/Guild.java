@@ -2,6 +2,7 @@ package tech.qvanphong.discordfaucet.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import tech.qvanphong.discordfaucet.config.TokenConfig;
 
 import javax.persistence.*;
 import java.util.List;
@@ -28,4 +29,7 @@ class Guild {
 
     @OneToMany(mappedBy = "guildId", cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Admin> admins;
+
+    @OneToMany(mappedBy = "guildId", cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<TokenConfig> tokenConfigs;
 }
