@@ -1,5 +1,5 @@
 # **ARK Faucet Discord bot**
-![ARK Faucet Discord bot logo](https://github.com/qvanphong/ark-faucet-discord-bot/tree/main/images/arkfaucetlogo.png)
+![ARK Faucet Discord bot logo](https://raw.githubusercontent.com/qvanphong/ark-faucet-discord-bot/main/images/arkfaucetlogo.png)
 ---
 A Discord bot that giving free ARK token (and any token based ARK). With own wallet for every guild.
 
