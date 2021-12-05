@@ -13,9 +13,6 @@ import org.springframework.context.annotation.Scope;
 @Scope("singleton")
 public @Data
 class FaucetConfig {
-
-    private String tokenSettingLocation;
-
     private String aslpApiUrl;
 
     private long defaultCoolDownMinutes;
