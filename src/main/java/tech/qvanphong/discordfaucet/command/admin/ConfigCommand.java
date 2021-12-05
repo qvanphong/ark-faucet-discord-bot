@@ -24,10 +24,10 @@ import java.util.List;
 
 @Component
 public class ConfigCommand implements SlashCommand {
-    private GuildConfigService guildConfigService;
-    private TokenConfigService tokenConfigService;
-    private UserUtility userUtility;
-    private ExclusionStrategy passphraseExclusionStrategy;
+    private final GuildConfigService guildConfigService;
+    private final TokenConfigService tokenConfigService;
+    private final UserUtility userUtility;
+    private final ExclusionStrategy passphraseExclusionStrategy;
 
     @Autowired
     public ConfigCommand(GuildConfigService guildConfigService, TokenConfigService tokenConfigService, UserUtility userUtility) {
@@ -37,7 +37,7 @@ public class ConfigCommand implements SlashCommand {
         this.passphraseExclusionStrategy = new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes f) {
-                return f.getDeclaredClass().equals(TokenConfig.class) && f.getName().equals("passphrase");
+                return f.getDeclaringClass() == TokenConfig.class && f.getName().equals("passphrase");
             }
 
             @Override
@@ -168,7 +168,10 @@ public class ConfigCommand implements SlashCommand {
                             TokenConfig selectedTokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
 
                             if (selectedTokenConfig == null) return Mono.error(new Throwable("Token " + tokenName.toUpperCase() + " chưa được thiết lập"));
-                            String jsonContent = new GsonBuilder().addSerializationExclusionStrategy(passphraseExclusionStrategy).create().toJson(selectedTokenConfig);
+                            String jsonContent = new GsonBuilder()
+                                    .addSerializationExclusionStrategy(passphraseExclusionStrategy)
+                                    .create()
+                                    .toJson(selectedTokenConfig);
 
                             return event.editReply("```\n" + jsonContent + "```");
                     }
