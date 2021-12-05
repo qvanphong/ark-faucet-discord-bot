@@ -1,8 +1,7 @@
 # **ARK Faucet Discord bot**
+![ARK Faucet Discord bot logo](https://github.com/qvanphong/ark-faucet-discord-bot/images/arkfaucetlogo.png)
 ---
 A Discord bot that giving free ARK token (and any token based ARK). With own wallet for every guild.
-
-Note: If you want a bot use separate wallet in every discord guild, check out own_wallet branch 
 
 What this discord bot support:
 - [x] ARK (mainnet, devnet)
@@ -18,45 +17,31 @@ What this discord bot support:
 - run jar file by `java -jar built_jar_file.jar`
 
 
-## application.properties setup
-```
-# Discord bot setup
-discord-bot.token=
-discord-bot.owner-id=
-
-# Database setup
-spring.datasource.url=
-spring.datasource.driverClassName=
-spring.datasource.username=
-spring.datasource.password=
-spring.jpa.database-platform=
-spring.jpa.hibernate.ddl-auto=update
-
-# faucet setup
-faucet.token-setting-location=
-faucet.aslp-api-url=https://aslp.qredit.dev/api/
-faucet.default-cool-down-minutes=180
-```
+## application.properties
+| Key                              | Property                                                                                                                                         |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| discord-bot.token                | Discord bot token                                                                                                                               |
+| discord-bot.owner-id             | Your Discord user id, use to send report to your private message when getting exception and consider you are have permission to limited commands |
+| faucet.aslp-api-url              | ASLP RESTful API.                                                                                                                                |
+| faucet.default-cool-down-minutes | Default minutes every time user can get reward.                                                                                                  |
 
 
-## Token profile setting
-- Create [token_symbol].token file following the that you setup in `faucet.token-setting-location` in `application.properties`/[guild_id]/
+## Config JSON Structure (used for /config editconfig)
 
-(token_symbol must match `value` value in `src\main\resources\commands\faucet.json`, for example: I setting up 3 token in faucet.json, these are ark, bind, bark (following their `value` key), the token profile file must be named ark.token, bind.token, bark.token)
-- the json structure following `TokenConfig.java` structure
-```
-{
-    "sender_address": "",
-	"explorer_url": "https://explorer.ark.io/",
-	"api_url": "https://api.ark.io/api/",
-	"reward_amount": 1,
-	"fee": 800000,
-	"network": 23,
-	"symbol": "ARK",
-	"is_aslp": true,
-	"aslp_reward": 1,
-	"aslp_token_id": "",
-	"passphrase": ""
-}
-```
-(no need to setup these aslp if you are not using aslp token)
+| Key                | Value   | Required | Description                                                                                |
+|--------------------|---------|----------|--------------------------------------------------------------------------------------------|
+| name               |  string |     ✔️    | Token name, value must match with choice option in faucet.json                             |
+| symbol             |  string |     ✔️    | Token symbol/ticker. In case using special character, convert it to Java Entity first      |
+| explorer_url       |  string |     ✔️    | Explorer URL                                                                               |
+| api_url            |  string |     ✔️    | Chain's RESTful API URL                                                                    |
+| network            |  number |     ✔️    | Network public key hash                                                                    |
+| reward_amount      |  number |     ✔️    | Reward that user can claim. Currency is arktoshi (100.000.000 arktoshi = 1 ARK)            |
+| fee                |  number |     ✔️    | Transaction fee. Currency is arktoshi                                                      |
+| sender_address     |  string |     ✔️    | Address of wallet that use to work with Faucet.                                            |
+| passphrase         |  string |     ✔️    | Wallet Passphrase (12 words)                                                               |
+| allow_vendor_field | boolean |          | Is chain allow vendor field in transaction. Default is true.                               |
+| vendor_field       | string  |          | Vendor field a.k.a transaction message. Default is "From ARK Faucet Discord bot with love" |
+| is_aslp            | boolean |          | Is ASLP token. default is false                                                            |
+| aslp_reward        | number  |          | ASLP Token reward, human readable value. (ex: 1 bARK = 1 bARK, not like arktoshi)          |
+| aslp_token_id      | string  |          | ASLP Token ID                                                                              |
+| aslp_api_url       | string  |          | ASLP RESTful API URL                                                                       |
