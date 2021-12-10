@@ -26,21 +26,19 @@ public class BlacklistCommand implements SlashCommand {
 
     @Override
     public Mono<Void> handle(ChatInputInteractionEvent event) {
+        Optional<Snowflake> guildIdOptional = event.getInteraction().getGuildId();
+        if (guildIdOptional.isEmpty())
+            return event.reply("Không thể lấy được guild id");
+
+        final long guildId = guildIdOptional.get().asLong();
 
         return event.deferReply()
-                .then(Mono.just(userUtility.isAdmin(event.getInteraction().getUser().getId().asLong())))
+                .then(Mono.just(userUtility.isAdmin(event.getInteraction().getUser().getId().asLong(), guildId)))
                 .flatMap(isAdmin -> !isAdmin ?
                         event.editReply("Bạn không có quyền sử dụng lệnh này") :
                         Mono.just(event.getOptions().get(0))
                                 .flatMap(subCommandInteraction -> {
-
-                                    Optional<Snowflake> guildIdOptional = event.getInteraction().getGuildId();
-                                    if (guildIdOptional.isEmpty())
-                                        return event.editReply("Không thể lấy được guild id");
-
                                     String subCommandName = subCommandInteraction.getName();
-
-                                    long guildId = guildIdOptional.get().asLong();
 
                                     return subCommandInteraction
                                             .getOptions()

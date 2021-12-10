@@ -65,7 +65,7 @@ public class AdminCommand implements SlashCommand {
 
 
                         case "add":
-                            if (userUtility.isAdmin(userId)) {
+                            if (userUtility.isAdmin(userId, guildId)) {
                                 return Mono
                                         .just(event.getOptions())
                                         .map(applicationCommandInteractionOptions -> applicationCommandInteractionOptions.get(0))
@@ -86,13 +86,13 @@ public class AdminCommand implements SlashCommand {
 
 
                         case "remove":
-                            if (userUtility.isAdmin(userId)) {
+                            if (userUtility.isAdmin(userId, guildId)) {
                                 return Mono
                                         .just(event.getOptions())
                                         .map(applicationCommandInteractionOptions -> applicationCommandInteractionOptions.get(0))
                                         .flatMap(interactionOption -> interactionOption.getOption("user").get().getValue().get().asUser())
                                         .map(user -> user.getId().asLong())
-                                        .flatMap(targetUserId -> event.editReply(createStatusMessage("Xóa quản trị viên", userUtility.removeAdmin(targetUserId))).then());
+                                        .flatMap(targetUserId -> event.editReply(createStatusMessage("Xóa quản trị viên", userUtility.removeAdmin(targetUserId, guildId))).then());
                             }
                             return Mono.error(new Exception("Bạn không phải là quản trị viên."));
 

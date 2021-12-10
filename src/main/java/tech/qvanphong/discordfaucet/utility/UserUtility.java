@@ -50,16 +50,20 @@ public class UserUtility {
         return "";
     }
 
-    public boolean isAdmin(long userId) {
-        return userId == botConfig.getOwnerId() || adminService.isAdmin(userId);
+    public boolean isAdmin(long userId, long guilId) {
+        return userId == botConfig.getOwnerId() || adminService.isAdmin(userId, guilId);
     }
 
     public Admin createAdmin(Admin admin) {
         return adminService.createAdmin(admin);
     }
 
-    public boolean removeAdmin(long userId) {
-        return adminService.removeAdmin(userId);
+    public boolean removeAdmin(long userId, long guildId) {
+        return adminService.removeAdmin(userId, guildId);
+    }
+
+    public boolean removeAdminFromGuild(long guildId) {
+        return adminService.removeAdminFromGuild(guildId);
     }
 
     public List<Admin> getAdminsFromGuild(long guildId) {

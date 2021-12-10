@@ -27,11 +27,15 @@ public class AdminService {
         return repository.save(admin);
     }
 
-    public boolean isAdmin(long id) {
-        return repository.existsAdminByUserId(id);
+    public boolean isAdmin(long id, long guildId) {
+        return repository.existsAdminByUserIdAndGuildId(id, guildId);
     }
 
-    public boolean removeAdmin(long id) {
-        return repository.deleteAdminByUserId(id) != 0;
+    public boolean removeAdmin(long id, long guildId) {
+        return repository.deleteAdminByUserIdAndGuildId(id, guildId) != 0;
+    }
+
+    public boolean removeAdminFromGuild(long guildId) {
+        return repository.deleteAdminsByGuildId(guildId) != 0;
     }
 }

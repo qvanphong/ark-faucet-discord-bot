@@ -83,7 +83,7 @@ public class DatabaseTests {
         admin.setGuildId(051L);
 
         Admin savedAdmin = adminService.createAdmin(admin);
-        boolean isAdmin = adminService.isAdmin(4234L);
+        boolean isAdmin = adminService.isAdmin(4234L, 1);
         assert isAdmin;
     }
 
@@ -98,7 +98,7 @@ public class DatabaseTests {
         Admin savedAdmin = adminService.createAdmin(admin);
         System.out.println(savedAdmin.getId());
 
-        boolean canDelete = adminService.removeAdmin(admin.getUser().getId());
+        boolean canDelete = adminService.removeAdmin(admin.getUser().getId(), 1);
         List<Admin> adminFromGuild = adminService.getAdminFromGuild(051L);
 
         assert canDelete && !adminFromGuild.isEmpty();
@@ -108,12 +108,13 @@ public class DatabaseTests {
     @Test
     public void removeAdmin(@Autowired AdminService adminService) {
         long userId = 4234L;
-        boolean isAdmin = adminService.isAdmin(userId);
+        long guildId = 1;
+        boolean isAdmin = adminService.isAdmin(userId, guildId);
         System.out.println("isAdmin: " + isAdmin);
 
-        boolean canDelete = adminService.removeAdmin(userId);
+        boolean canDelete = adminService.removeAdmin(userId, guildId);
 
-        boolean isAdminAfterRemove = adminService.isAdmin(userId);
+        boolean isAdminAfterRemove = adminService.isAdmin(userId, guildId);
         assert isAdmin && canDelete && !isAdminAfterRemove;
     }
 

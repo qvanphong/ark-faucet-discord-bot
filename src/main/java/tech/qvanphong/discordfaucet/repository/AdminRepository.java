@@ -8,9 +8,11 @@ import java.util.List;
 
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Integer> {
-    boolean existsAdminByUserId(long userId);
+    boolean existsAdminByUserIdAndGuildId(long userId, long guildId);
 
-    Integer deleteAdminByUserId(long userId);
+    Integer deleteAdminByUserIdAndGuildId(long userId, long guildId);
+
+    Integer deleteAdminsByGuildId(long guildId);
 
     List<Admin> findAllByGuildId(long guildId);
 }

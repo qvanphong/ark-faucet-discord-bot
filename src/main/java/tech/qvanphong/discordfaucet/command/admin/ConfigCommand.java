@@ -61,7 +61,7 @@ public class ConfigCommand implements SlashCommand {
 
         return event.deferReply()
                 .withEphemeral(true)
-                .then(Mono.just(userUtility.isAdmin(event.getInteraction().getUser().getId().asLong())))
+                .then(Mono.just(userUtility.isAdmin(event.getInteraction().getUser().getId().asLong(), guildId)))
                 .flatMap(isAdmin -> isAdmin ? Mono.empty() : Mono.error(new Exception("Bạn không có quyền sử dụng lệnh này")))
                 .then(Mono.just(subCommandInteractionOption.getName()))
                 .flatMap(subCommandName -> {
