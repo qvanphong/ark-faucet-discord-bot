@@ -3,6 +3,7 @@ package tech.qvanphong.discordfaucet.utility;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.arkecosystem.client.Connection;
 import org.arkecosystem.crypto.identities.Address;
 import org.arkecosystem.crypto.transactions.builder.TransferBuilder;
@@ -96,15 +97,20 @@ public class ARKClientUtility {
 
     public Transaction createTransaction(String recipientAddress, long nonce) {
         if (!tokenConfig.isAslp()) {
-            return new TransferBuilder()
+            TransferBuilder transferBuilder = new TransferBuilder()
                     .network(tokenConfig.getNetwork())
                     .recipient(recipientAddress)
                     .amount(tokenConfig.getRewardAmount())
                     .vendorField(tokenConfig.isAllowVendorField() ? tokenConfig.getVendorField() : null)
                     .fee(tokenConfig.getFee())
                     .nonce(nonce + 1)
-                    .sign(tokenConfig.getPassphrase())
-                    .transaction;
+                    .sign(tokenConfig.getPassphrase());
+
+            // second passphrase if exist
+            if (!StringUtils.isEmpty(tokenConfig.getSecondPassphrase()))
+                transferBuilder = transferBuilder.secondSign(tokenConfig.getSecondPassphrase());
+
+            return transferBuilder.transaction;
         } else {
 
             OkHttpClient okHttpClient = connection.client().getClient();
@@ -115,16 +121,20 @@ public class ARKClientUtility {
                 Response response = okHttpClient.newCall(request).execute();
                 if (response.isSuccessful()) {
                     String vendorField = response.body().string();
-                    Transaction transaction = new TransferBuilder()
+                    TransferBuilder transferBuilder = new TransferBuilder()
                             .network(tokenConfig.getNetwork())
                             .recipient(recipientAddress)
                             .amount(tokenConfig.getRewardAmount())
                             .vendorField(vendorField)
                             .fee(tokenConfig.getFee())
                             .nonce(nonce + 1)
-                            .sign(tokenConfig.getPassphrase())
-                            .transaction;
-                    return transaction;
+                            .sign(tokenConfig.getPassphrase());
+
+                    // second passphrase if exist
+                    if (!StringUtils.isEmpty(tokenConfig.getSecondPassphrase()))
+                        transferBuilder = transferBuilder.secondSign(tokenConfig.getSecondPassphrase());
+
+                    return transferBuilder.transaction;
                 }
                 return null;
             } catch (IOException e) {

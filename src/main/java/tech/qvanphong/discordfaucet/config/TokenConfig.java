@@ -83,6 +83,13 @@ public class TokenConfig {
     private String passphrase;
 
     /*
+     * Wallet's 2nd passphrase to sign transactions.
+     * */
+    @SerializedName("second_passphrase")
+    @Column(nullable = true)
+    private String secondPassphrase;
+
+    /*
     * Is network allow vendor field
     * */
     @SerializedName("allow_vendor_field")
@@ -135,7 +142,6 @@ public class TokenConfig {
                 ", network=" + network +
                 ", fee=" + fee +
                 ", rewardAmount=" + rewardAmount +
-                ", passphrase='" + passphrase + '\'' +
                 ", allowVendorField=" + allowVendorField +
                 ", vendorField='" + vendorField + '\'' +
                 ", isAslp=" + isAslp +

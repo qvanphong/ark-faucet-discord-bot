@@ -37,7 +37,7 @@ public class ConfigCommand implements SlashCommand {
         this.passphraseExclusionStrategy = new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes f) {
-                return f.getDeclaringClass() == TokenConfig.class && f.getName().equals("passphrase");
+                return f.getDeclaringClass() == TokenConfig.class && (f.getName().equals("passphrase") || f.getName().equals("secondPassphrase"));
             }
 
             @Override
