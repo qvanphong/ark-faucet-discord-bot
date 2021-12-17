@@ -6,9 +6,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.InteractionReplyEditMono;
 import discord4j.core.spec.InteractionReplyEditSpec;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -72,113 +75,135 @@ public class ConfigCommand implements SlashCommand {
 
                     switch (subCommandName) {
                         case "cooldown":
-                            int minutes = (int) subCommandInteractionOption.getOptions().get(0).getValue().get().asLong();
-
-                            guildConfig.setCoolDownMinutes(minutes);
-                            guildConfigService.saveGuildConfig(guildConfig);
-
-                            return event.editReply("Đã cập nhật thời gian nhận thưởng: " + minutes + " phút");
-
-
+                            return changeCoolDown(event, subCommandInteractionOption, guildConfig);
                         case "allowall":
-                            boolean isAllRoleAllowed = subCommandInteractionOption.getOptions().get(0).getValue().get().asBoolean();
-
-                            guildConfig.setAllRoleAllowed(isAllRoleAllowed);
-                            guildConfigService.saveGuildConfig(guildConfig);
-
-                            return event.editReply("Đã cập cho phép mọi người dùng dùng lệnh: " + (isAllRoleAllowed ? "Có" : "Không"));
-
-
+                            return changeAllowAll(event, subCommandInteractionOption, guildConfig);
                         case "allowrole":
-                            return subCommandInteractionOption.getOptions().get(0).getValue().get().asRole()
-                                    .flatMap(role -> {
-                                        long roleId = role.getId().asLong();
-                                        AllowedRole allowedRole = new AllowedRole();
-                                        allowedRole.setRoleId(roleId);
-                                        allowedRole.setGuild(guildConfig);
-
-                                        if (allowedRoles.contains(allowedRole))
-                                            return event.editReply("Role này đã tồn tại trong danh sách cho phép");
-
-                                        allowedRoles.add(allowedRole);
-                                        guildConfigService.saveGuildConfig(guildConfig);
-
-                                        return event.editReply("Đã thêm role " + role.getName() + " vào danh sách cho phép sử dụng lệnh /faucet");
-                                    });
-
-
-                        case "removeallowrole":
-                            return subCommandInteractionOption.getOptions().get(0).getValue().get().asRole()
-                                    .flatMap(role -> {
-                                        long roleId = role.getId().asLong();
-                                        AllowedRole allowedRole = userUtility.getAllowedRole(roleId);
-                                        if (allowedRole == null)
-                                            return event.editReply("Role này chưa tồn tại trong danh sách cho phép");
-
-                                        allowedRoles.remove(allowedRole);
-                                        guildConfigService.saveGuildConfig(guildConfig);
-
-                                        return event.editReply("Đã xóa role " + role.getName() + " khỏi danh sách cho phép sử dụng lệnh /faucet");
-                                    });
-
-                        case "listallowroles":
-                            if (guildConfig.isAllRoleAllowed())
-                                return event.editReply("Không chỉ định role do bot thiết lập cho phép toàn bộ người dùng có thể dùng.");
-                            StringBuilder roleListMessage = new StringBuilder();
-
-                            for (AllowedRole allowedRole : allowedRoles) {
-                                roleListMessage.append("<@&")
-                                        .append(allowedRole.getRoleId())
-                                        .append(">\n");
-                            }
-
-
-                            return event.editReply(InteractionReplyEditSpec.builder()
-                                    .addEmbed(embedBuilder
-                                            .title("Các role được sử dụng lệnh /faucet")
-                                            .description(roleListMessage.toString())
-                                            .build())
-                                    .build());
-
-                        case "show":
-                            return event.getInteraction().getGuild().flatMap(
-                                    guild ->
-                                            event.editReply(InteractionReplyEditSpec.builder()
-                                                    .addEmbed(embedBuilder
-                                                            .title("Config ARK Faucet của " + guild.getName())
-                                                            .description(String.format("Thời gian nhận mỗi đợt: %d phút\nCho phép mọi người dùng dùng lệnh: %s",
-                                                                    guildConfig.getCoolDownMinutes(), guildConfig.isAllRoleAllowed() ? "Có" : "Không"))
-                                                            .build())
-                                                    .build()));
-
-                        case "editconfig":
-                            String json = subCommandInteractionOption.getOption("json").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
-                            TokenConfig tokenConfig = new Gson().fromJson(json, TokenConfig.class);
-                            tokenConfig.setGuildId(guildId);
-
-                            if (validateTokenConfig(tokenConfig)) {
-                                tokenConfigService.saveTokenConfig(tokenConfig);
-                                return event.editReply("Đã cập nhật config mới của token");
-                            } else {
-                                return Mono.error(new Throwable("JSON chưa đúng định dạng."));
-                            }
-
-                        case "readconfig":
-                            String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
-                            TokenConfig selectedTokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
-
-                            if (selectedTokenConfig == null) return Mono.error(new Throwable("Token " + tokenName.toUpperCase() + " chưa được thiết lập"));
-                            String jsonContent = new GsonBuilder()
-                                    .addSerializationExclusionStrategy(passphraseExclusionStrategy)
-                                    .create()
-                                    .toJson(selectedTokenConfig);
-
-                            return event.editReply("```\n" + jsonContent + "```");
+                            return addAllowRole(event, subCommandInteractionOption, guildConfig, allowedRoles);
+                        case "denyrole":
+                            return denyAllowedRole(event, subCommandInteractionOption, guildConfig, allowedRoles);
+                        case "showroles":
+                            return showAllowedRoles(event, guildConfig, embedBuilder, allowedRoles);
+                        case "showserverconfig":
+                            return showServerConfig(event, guildConfig, embedBuilder);
+                        case "editjson":
+                            return updateJson(event, subCommandInteractionOption, guildId);
+                        case "readjson":
+                            return readJsonConfig(event, subCommandInteractionOption, guildId);
+                        case "disable":
+                            return toggleToken(event, subCommandInteractionOption, guildId);
+                        case "fee":
+                            return changeFee(event, subCommandInteractionOption, guildId);
+                        case "reward":
+                            return changeReward(event, subCommandInteractionOption, guildId);
                     }
                     return Mono.empty();
                 })
                 .onErrorResume(throwable -> event.editReply(throwable.getMessage()))
                 .then();
+    }
+
+    @NotNull
+    private Mono<Message> updateJson(ChatInputInteractionEvent event, ApplicationCommandInteractionOption subCommandInteractionOption, long guildId) {
+        String json = subCommandInteractionOption.getOption("json").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        TokenConfig tokenConfig = new Gson().fromJson(json, TokenConfig.class);
+        tokenConfig.setGuildId(guildId);
+
+        if (validateTokenConfig(tokenConfig)) {
+            tokenConfigService.saveTokenConfig(tokenConfig);
+            return event.editReply("Đã cập nhật config mới của token");
+        } else {
+            return Mono.error(new Throwable("JSON chưa đúng định dạng."));
+        }
+    }
+
+    @NotNull
+    private Mono<Message> showServerConfig(ChatInputInteractionEvent event, Guild guildConfig, EmbedCreateSpec.Builder embedBuilder) {
+        return event.getInteraction().getGuild().flatMap(
+                guild ->
+                        event.editReply(InteractionReplyEditSpec.builder()
+                                .addEmbed(embedBuilder
+                                        .title("Config ARK Faucet của " + guild.getName())
+                                        .description(String.format("Thời gian nhận mỗi đợt: %d phút\nCho phép mọi người dùng dùng lệnh: %s",
+                                                guildConfig.getCoolDownMinutes(), guildConfig.isAllRoleAllowed() ? "Có" : "Không"))
+                                        .build())
+                                .build()));
+    }
+
+    @NotNull
+    private Mono<Message> showAllowedRoles(ChatInputInteractionEvent event, Guild guildConfig, EmbedCreateSpec.Builder embedBuilder, List<AllowedRole> allowedRoles) {
+        if (guildConfig.isAllRoleAllowed())
+            return event.editReply("Không chỉ định role do bot thiết lập cho phép toàn bộ người dùng có thể dùng.");
+        StringBuilder roleListMessage = new StringBuilder();
+
+        for (AllowedRole allowedRole : allowedRoles) {
+            roleListMessage.append("<@&")
+                    .append(allowedRole.getRoleId())
+                    .append(">\n");
+        }
+
+
+        return event.editReply(InteractionReplyEditSpec.builder()
+                .addEmbed(embedBuilder
+                        .title("Các role được sử dụng lệnh /faucet")
+                        .description(roleListMessage.toString())
+                        .build())
+                .build());
+    }
+
+    @NotNull
+    private Mono<Message> denyAllowedRole(ChatInputInteractionEvent event, ApplicationCommandInteractionOption subCommandInteractionOption, Guild guildConfig, List<AllowedRole> allowedRoles) {
+        return subCommandInteractionOption.getOptions().get(0).getValue().get().asRole()
+                .flatMap(role -> {
+                    long roleId = role.getId().asLong();
+                    AllowedRole allowedRole = userUtility.getAllowedRole(roleId);
+                    if (allowedRole == null)
+                        return event.editReply("Role này chưa tồn tại trong danh sách cho phép");
+
+                    allowedRoles.remove(allowedRole);
+                    guildConfigService.saveGuildConfig(guildConfig);
+
+                    return event.editReply("Đã xóa role " + role.getName() + " khỏi danh sách cho phép sử dụng lệnh /faucet");
+                });
+    }
+
+    @NotNull
+    private Mono<Message> addAllowRole(ChatInputInteractionEvent event, ApplicationCommandInteractionOption subCommandInteractionOption, Guild guildConfig, List<AllowedRole> allowedRoles) {
+        return subCommandInteractionOption.getOptions().get(0).getValue().get().asRole()
+                .flatMap(role -> {
+                    long roleId = role.getId().asLong();
+                    AllowedRole allowedRole = new AllowedRole();
+                    allowedRole.setRoleId(roleId);
+                    allowedRole.setGuild(guildConfig);
+
+                    if (allowedRoles.contains(allowedRole))
+                        return event.editReply("Role này đã tồn tại trong danh sách cho phép");
+
+                    allowedRoles.add(allowedRole);
+                    guildConfigService.saveGuildConfig(guildConfig);
+
+                    return event.editReply("Đã thêm role " + role.getName() + " vào danh sách cho phép sử dụng lệnh /faucet");
+                });
+    }
+
+    @NotNull
+    private InteractionReplyEditMono changeAllowAll(ChatInputInteractionEvent event, ApplicationCommandInteractionOption subCommandInteractionOption, Guild guildConfig) {
+        boolean isAllRoleAllowed = subCommandInteractionOption.getOptions().get(0).getValue().get().asBoolean();
+
+        guildConfig.setAllRoleAllowed(isAllRoleAllowed);
+        guildConfigService.saveGuildConfig(guildConfig);
+
+        return event.editReply("Đã cập cho phép mọi người dùng dùng lệnh: " + (isAllRoleAllowed ? "Có" : "Không"));
+    }
+
+    @NotNull
+    private InteractionReplyEditMono changeCoolDown(ChatInputInteractionEvent event, ApplicationCommandInteractionOption subCommandInteractionOption, Guild guildConfig) {
+        int minutes = (int) subCommandInteractionOption.getOptions().get(0).getValue().get().asLong();
+
+        guildConfig.setCoolDownMinutes(minutes);
+        guildConfigService.saveGuildConfig(guildConfig);
+
+        return event.editReply("Đã cập nhật thời gian nhận thưởng: " + minutes + " phút");
     }
 
     private boolean validateTokenConfig(TokenConfig tokenConfig) {
@@ -193,6 +218,71 @@ public class ConfigCommand implements SlashCommand {
                 tokenConfig.getRewardAmount() != 0 &&
                 tokenConfig.getNetwork() != 0 &&
                 (!tokenConfig.isAslp() || tokenConfig.getAslpReward() != 0);
+    }
+
+    private Mono<Message> toggleToken(ChatInputInteractionEvent event,
+                                      ApplicationCommandInteractionOption subCommandInteractionOption,
+                                      long guildId) {
+        String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        boolean value = subCommandInteractionOption.getOption("value").flatMap(ApplicationCommandInteractionOption::getValue).get().asBoolean();
+        TokenConfig tokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
+
+        if (tokenConfig == null)
+            return Mono.error(new Throwable("Token " + tokenName + " chưa được cấu hình trước đó "));
+
+        tokenConfig.setDisabled(value);
+        tokenConfigService.saveTokenConfig(tokenConfig);
+
+        return event.editReply("Đã " + (value ? "tắt" : "mở") + " token " + tokenName);
+    }
+
+    private Mono<Message> changeReward(ChatInputInteractionEvent event,
+                                       ApplicationCommandInteractionOption subCommandInteractionOption,
+                                       long guildId) {
+        String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        long value = subCommandInteractionOption.getOption("value").flatMap(ApplicationCommandInteractionOption::getValue).get().asLong();
+        TokenConfig tokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
+
+        if (tokenConfig == null)
+            return Mono.error(new Throwable("Token " + tokenName + " chưa được cấu hình trước đó "));
+
+        tokenConfig.setRewardAmount(value);
+        tokenConfigService.saveTokenConfig(tokenConfig);
+
+        return event.editReply("Đã cập nhật phí giao dịch mới.");
+    }
+
+    private Mono<Message> changeFee(ChatInputInteractionEvent event,
+                                    ApplicationCommandInteractionOption subCommandInteractionOption,
+                                    long guildId) {
+        String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        long value = subCommandInteractionOption.getOption("value").flatMap(ApplicationCommandInteractionOption::getValue).get().asLong();
+        TokenConfig tokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
+
+        if (tokenConfig == null)
+            return Mono.error(new Throwable("Token " + tokenName + " chưa được cấu hình trước đó "));
+
+        tokenConfig.setFee(value);
+        tokenConfigService.saveTokenConfig(tokenConfig);
+
+        return event.editReply("Đã cập nhật phí giao dịch mới.");
+    }
+
+    private Mono<Message> readJsonConfig(ChatInputInteractionEvent event,
+                                         ApplicationCommandInteractionOption subCommandInteractionOption,
+                                         long guildId) {
+
+        String tokenName = subCommandInteractionOption.getOption("token").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();
+        TokenConfig selectedTokenConfig = tokenConfigService.getTokenConfig(guildId, tokenName);
+
+        if (selectedTokenConfig == null)
+            return Mono.error(new Throwable("Token " + tokenName.toUpperCase() + " chưa được thiết lập"));
+        String jsonContent = new GsonBuilder()
+                .addSerializationExclusionStrategy(passphraseExclusionStrategy)
+                .create()
+                .toJson(selectedTokenConfig);
+
+        return event.editReply("```\n" + jsonContent + "```");
     }
 
 }

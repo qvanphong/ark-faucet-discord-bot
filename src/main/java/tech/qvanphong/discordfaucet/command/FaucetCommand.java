@@ -5,6 +5,7 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.User;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +51,7 @@ public class FaucetCommand implements SlashCommand {
         TokenConfig tokenConfig = guildTokenConfigUtility.getTokenConfig(guildId, selectedToken);
 
         // Check if this network is already config
-        if (tokenConfig == null || tokenConfig.getPassphrase() == null || tokenConfig.getPassphrase().isEmpty())
+        if (tokenConfig == null || StringUtils.isEmpty(tokenConfig.getPassphrase()) || tokenConfig.isDisabled())
             return event.reply("Token " + selectedToken + " chưa được hỗ trợ hoặc tạm thời dừng hỗ trợ.");
 
         String recipientAddress = event.getOption("address").flatMap(ApplicationCommandInteractionOption::getValue).get().asString();

@@ -131,6 +131,9 @@ public class TokenConfig {
     @Column(nullable = true, columnDefinition = "varchar(255) default 'https://aslp.qredit.dev/api/'")
     private String aslpApiUrl = "https://aslp.qredit.dev/api/";
 
+    @Column(columnDefinition = "boolean default false")
+    private boolean isDisabled;
+
     @Override
     public String toString() {
         return "TokenConfig{" +

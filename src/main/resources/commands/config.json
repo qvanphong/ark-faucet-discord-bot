@@ -42,7 +42,7 @@
       ]
     },
     {
-      "name": "removeallowrole",
+      "name": "denyrole",
       "description": "Xóa role có quyền dùng lệnh /faucet",
       "type": 1,
       "options": [
@@ -55,17 +55,17 @@
       ]
     },
     {
-      "name": "listallowroles",
+      "name": "showroles",
       "description": "Hiển thị danh sách role cho phép sử dụng lệnh /faucet",
       "type": 1
     },
     {
-      "name": "show",
+      "name": "showserverconfig",
       "description": "Xem các config tại server này.",
       "type": 1
     },
     {
-      "name": "editconfig",
+      "name": "editjson",
       "description": "Thiết lập lại config của token",
       "type": 1,
       "options": [
@@ -78,7 +78,7 @@
       ]
     },
     {
-      "name": "readconfig",
+      "name": "readjson",
       "description": "Hiển thị config hiện tại của token",
       "type": 1,
       "options": [
@@ -105,6 +105,117 @@
               "value": "xqr"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "disable",
+      "description": "Tắt faucet của một token",
+      "type": 1,
+      "options": [
+        {
+          "name": "token",
+          "description": "Chọn token",
+          "type": 3,
+          "required": true,
+          "choices": [
+            {
+              "name": "ARK",
+              "value": "ark"
+            },
+            {
+              "name": "BIND",
+              "value": "bind"
+            },
+            {
+              "name": "bARK",
+              "value": "bark"
+            },
+            {
+              "name": "XQR",
+              "value": "xqr"
+            }
+          ]
+        },
+        {
+          "name": "value",
+          "description": "Tắt hoặc không",
+          "type": 5,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "fee",
+      "description": "Thay đổi fee của giao dịch",
+      "type": 1,
+      "options": [
+        {
+          "name": "token",
+          "description": "Chọn token",
+          "type": 3,
+          "required": true,
+          "choices": [
+            {
+              "name": "ARK",
+              "value": "ark"
+            },
+            {
+              "name": "BIND",
+              "value": "bind"
+            },
+            {
+              "name": "bARK",
+              "value": "bark"
+            },
+            {
+              "name": "XQR",
+              "value": "xqr"
+            }
+          ]
+        },
+        {
+          "name": "value",
+          "description": "Phí giao dịch, tính theo arktoshi",
+          "type": 4,
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "reward",
+      "description": "Thay đổi thưởng của một token",
+      "type": 1,
+      "options": [
+        {
+          "name": "token",
+          "description": "Chọn token",
+          "type": 3,
+          "required": true,
+          "choices": [
+            {
+              "name": "ARK",
+              "value": "ark"
+            },
+            {
+              "name": "BIND",
+              "value": "bind"
+            },
+            {
+              "name": "bARK",
+              "value": "bark"
+            },
+            {
+              "name": "XQR",
+              "value": "xqr"
+            }
+          ]
+        },
+        {
+          "name": "value",
+          "description": "Thưởng, tính theo arktoshi",
+          "type": 4,
+          "required": true
         }
       ]
     }
