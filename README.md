@@ -7,7 +7,7 @@ What this discord bot support:
 - [x] ARK (mainnet, devnet)
 - [x] BIND (mainnet, devnet)
 - [x] bARK
-- [ ] Qredit
+- [x] Qredit
 
 ## Setup
 - Clone this repo
@@ -38,7 +38,8 @@ What this discord bot support:
 | reward_amount      |  number |     ✔️    | Reward that user can claim. Currency is arktoshi (100.000.000 arktoshi = 1 ARK)            |
 | fee                |  number |     ✔️    | Transaction fee. Currency is arktoshi                                                      |
 | sender_address     |  string |     ✔️    | Address of wallet that use to work with Faucet.                                            |
-| passphrase         |  string |     ✔️    | Wallet Passphrase (12 words)                                                               |
+| passphrase         |  string |     ✔️    | Wallet passphrase                                                               |
+| passphrase         |  string |          | Wallet second passphrase                                                               |
 | allow_vendor_field | boolean |          | Is chain allow vendor field in transaction. Default is true.                               |
 | vendor_field       | string  |          | Vendor field a.k.a transaction message. Default is "From ARK Faucet Discord bot with love" |
 | is_aslp            | boolean |          | Is ASLP token. default is false                                                            |
